@@ -11,6 +11,7 @@ if [[ $ACTION == "push_image" ]];then
 
   env
   set -x
+  
   # Push the docker image
   push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG
 
