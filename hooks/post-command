@@ -9,7 +9,7 @@ ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
 if [[ $ACTION == "push_image" ]];then
   echo "--- :floppy_disk: Push $ENVIRONMENT image for $APP"
 
-  env
+  set
   set -x
   
   # Push the docker image
