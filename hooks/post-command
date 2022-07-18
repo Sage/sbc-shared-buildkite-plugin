@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -euo pipefail
+
+. "$(dirname $BASH_SOURCE)/../functions.sh"
+
+ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
+
+if [[ $ACTION == "push_image" ]];then
+  echo "--- :floppy_disk: Push $ENVIRONMENT image for $APP"
+
+  env
+  set -x
+  # Push the docker image
+  push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG
+
+  # For dev, other images like database and test and master should be pushed.
+  if [[ "$ENVIRONMENT" == "qa" ]]; then
+    if [[ "$HAS_DB_IMAGE" == "true" ]]; then
+      echo "DB image"
+      BK_BRANCH="database-$BK_BRANCH"
+      push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag database
+    fi
+
+    if [[ "$BK_BRANCH" == "master" ]]; then
+      echo "Master test image "
+      BK_BRANCH="test-$BK_BRANCH"
+      push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag test
+    fi
+  fi
+else
+  echo "Unsupport action name of $ACTION"
+  exit 1
+fi

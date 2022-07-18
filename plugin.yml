@@ -1,0 +1,23 @@
+name: SBC Shared Build Tools
+description: Common functions to used to build and deliver SBC docker images
+author: https://github.com/Sage
+requirements:
+  - aws
+configuration:
+  properties:
+    action:
+      type: string
+    environment:
+      type: string
+    landscape:
+      type: string
+    aws_account_id:
+      type: string
+    tag:
+      type: string
+  required:
+    - action
+    - environment
+    - landscape
+    - aws_account_id
+  additionalProperties: false
