@@ -11,13 +11,10 @@ configuration:
       type: string
     landscape:
       type: string
-    aws_account_id:
-      type: string
     tag:
       type: string
   required:
     - action
     - environment
     - landscape
-    - aws_account_id
   additionalProperties: false

@@ -9,10 +9,8 @@ ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
 if [[ $ACTION == "push_image" ]];then
   echo "--- :floppy_disk: Push $ENVIRONMENT image for $APP"
 
-  set
-  set -x
-  
   # Push the docker image
+  ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
   push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG
 
   # For dev, other images like database and test and master should be pushed.
