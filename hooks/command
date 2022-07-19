@@ -31,7 +31,7 @@ elif [[ $ACTION == "push_param" ]];then
 
   # change directory from which all param logic expects to be run from.
   cd configuration
-  CI_BRANCH=$BK_BRANCH ./push.sh $config_path
+ ./push.sh $config_path
 else
   echo "Unsupport action name of $ACTION"
   exit 1
