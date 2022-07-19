@@ -17,4 +17,5 @@ configuration:
     - action
     - environment
     - landscape
+    - account_id
   additionalProperties: false

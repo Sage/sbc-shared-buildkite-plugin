@@ -10,7 +10,6 @@ if [[ $ACTION == "push_image" ]];then
   echo "--- :floppy_disk: Push $ENVIRONMENT image for $APP"
 
   # Push the docker image
-  ACCOUNT_ID=$(aws sts get-caller-identity --output text --query 'Account')
   push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG
 
   # For dev, other images like database and test and master should be pushed.
@@ -27,6 +26,12 @@ if [[ $ACTION == "push_image" ]];then
       push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag test
     fi
   fi
+elif [[ $ACTION == "push_param" ]];then
+ config_path=$ENVIRONMENT/$LANDSCAPE
+
+  # change directory from which all param logic expects to be run from.
+  cd configuration
+  CI_BRANCH=$BK_BRANCH ./push.sh $config_path
 else
   echo "Unsupport action name of $ACTION"
   exit 1
