@@ -33,7 +33,8 @@ elif [[ $ACTION == "push_param" ]];then
   cd configuration
  ./push.sh $config_path
 elif [[ $ACTION == "build" ]];then
-  ./buildkite/build.sh
+  . "$BUILD_PIPELINE_PATH/build.sh"
+  run_build
 else
   echo "Unsupport action name of $ACTION"
   exit 1
