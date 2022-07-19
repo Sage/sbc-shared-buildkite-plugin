@@ -33,6 +33,7 @@ elif [[ $ACTION == "push_param" ]];then
   cd configuration
  ./push.sh $config_path
 elif [[ $ACTION == "build" ]];then
+  BUILD_PIPELINE_PATH=$(buildkite-agent meta-data get "BUILD_PIPELINE_PATH")
   . "$BUILD_PIPELINE_PATH/build.sh"
   run_build
 else
