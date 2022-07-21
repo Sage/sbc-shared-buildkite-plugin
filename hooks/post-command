@@ -43,7 +43,7 @@ elif [[ $ACTION == "build" ]];then
   fi
 
   # execute the predetermined build script that a repository must have.
-  .buildkite/build.sh
+  . ".buildkite/build.sh"
 else
   echo "Unsupport action name of $ACTION"
   exit 1
