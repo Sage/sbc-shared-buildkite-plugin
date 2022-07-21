@@ -110,7 +110,7 @@ buildx_and_cachex () {
 
   buildx --app $app --target $target --tag $tag --file $file --cache_id $cache_id
   
-  cachex --tag $tag --branch $branch
+  cachex --tag $tag --cache_id $cache_id
 }
 
 # Push an image into the BK ECR
@@ -129,11 +129,11 @@ pushx () {
 # Push an image into the BK ECR for caching builds
 cachex () {
   switches "$@"
-  validate_switches app tag branch
+  validate_switches app tag cache_id
   varx REPO
 
   echo "--- :s3: Cache $tag"
-  local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-cache-$branch
+  local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-cache-$cache_id
   docker tag $REPO:$tag $BUILD_IMAGE_NAME
   docker push $BUILD_IMAGE_NAME
 }
