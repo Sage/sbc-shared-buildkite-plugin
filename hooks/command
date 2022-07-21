@@ -1,2 +1,3 @@
-echo "$BUILDKITE_COMMAND"
-echo "Commands are ignored for this plugin"
+if [[ -n $BUILDKITE_COMMAND ]]; then
+  eval $BUILDKITE_COMMAND
+fi
