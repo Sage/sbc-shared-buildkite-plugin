@@ -98,7 +98,7 @@ buildx() {
 # cache_id => cache identifier from where it was built from.  Typically GH branch name
 buildx_and_cachex () { 
   switches "$@"
-  validate_switches app tag cache_id file
+  validate_switches app target tag cache_id file
   varx REPO
 
   if [[ -z $target ]]; then
