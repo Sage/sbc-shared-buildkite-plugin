@@ -5,9 +5,23 @@ set -euo pipefail
 prefix="${BUILDKITE_PLUGIN_SBC_SHARED_REPO_PREFIX:-sageone}"
 setup $prefix
 
+set +u
 # Validation of config will be done by each relevant action
-export ENVIRONMENT="${BUILDKITE_PLUGIN_SBC_SHARED_ENVIRONMENT:-''}"
-export LANDSCAPE="${BUILDKITE_PLUGIN_SBC_SHARED_LANDSCAPE:-''}"
-export ACCOUNT_ID="${BUILDKITE_PLUGIN_SBC_SHARED_ACCOUNT_ID:-''}"
+export ENVIRONMENT="${BUILDKITE_PLUGIN_SBC_SHARED_ENVIRONMENT}"
+if [[ -z $ENVIRONMENT ]]; then
+  unset ENVIRONMENT
+fi
+
+export LANDSCAPE="${BUILDKITE_PLUGIN_SBC_SHARED_LANDSCAPE}"
+if [[ -z $LANDSCAPE ]]; then
+  unset LANDSCAPE
+fi
+
+export ACCOUNT_ID="${BUILDKITE_PLUGIN_SBC_SHARED_ACCOUNT_ID}"
+if [[ -z $ACCOUNT_ID ]]; then
+  unset ACCOUNT_ID
+fi
+
+set -u
 export DOCKER_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TAG:-application}"
 export HAS_DB_IMAGE="${BUILDKITE_PLUGIN_SBC_SHARED_HAS_DB_IMAGE:-false}"
