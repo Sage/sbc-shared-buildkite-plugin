@@ -1,1 +1,2 @@
+echo "$BUILDKITE_COMMAND"
 echo "Commands are ignored for this plugin"
