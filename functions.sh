@@ -51,14 +51,17 @@ validate_switches() {
 
   arr=("$@")
  
+  set +u
   for item in "${arr[@]}"
   do
     if [ -z "${!item}" ]; then
       echo "--$item is not set"
       echo $@
+      set -u
       exit 1
     fi
   done
+  set -u
 }
 
 # target => set the target build stage to build
