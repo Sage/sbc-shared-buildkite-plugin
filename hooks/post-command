@@ -14,16 +14,18 @@ if [[ $ACTION == "push_image" ]];then
 
   # For dev, other images like database and test and master should be pushed.
   if [[ "$ENVIRONMENT" == "qa" ]]; then
-    if [[ "$HAS_DB_IMAGE" == "true" ]]; then
-      echo "DB image"
-      BK_BRANCH="database-$BK_BRANCH"
-      push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag database
-    fi
+    INITIAL_BK_BRANCH="$BK_BRANCH"
 
     if [[ "$BK_BRANCH" == "master" ]]; then
       echo "Master test image "
       BK_BRANCH="test-$BK_BRANCH"
       push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag test
+    fi
+
+    if [[ "$HAS_DB_IMAGE" == "true" ]]; then
+      echo "DB image"
+      BK_BRANCH="database-$INITIAL_BK_BRANCH"
+      push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag database
     fi
   fi
 elif [[ $ACTION == "push_param" ]];then
@@ -33,8 +35,8 @@ elif [[ $ACTION == "push_param" ]];then
   cd configuration
  ./push.sh $config_path
 elif [[ $ACTION == "build" ]];then
-  BUILD_PIPELINE_PATH=$(buildkite-agent meta-data get "BUILD_PIPELINE_PATH")
-  . "$BUILD_PIPELINE_PATH/build.sh"
+  # BUILD_PIPELINE_PATH=$(buildkite-agent meta-data get "BUILD_PIPELINE_PATH")
+  . ".buildkite/build.sh"
   run_build
 else
   echo "Unsupport action name of $ACTION"
