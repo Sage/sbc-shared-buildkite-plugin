@@ -3,5 +3,6 @@
 set -euo pipefail
 
 if [[ -n $BUILDKITE_COMMAND ]]; then
+  echo "Step command detected for $BUILDKITE_LABEL .  Executing command"
   eval $BUILDKITE_COMMAND
 fi
