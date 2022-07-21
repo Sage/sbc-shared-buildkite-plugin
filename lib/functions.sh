@@ -61,33 +61,51 @@ validate_switches() {
   done
 }
 
+# target => set the target build stage to build
+# tag => tag for the docker image
+# file => source docker file to build from
+# cache_id => cache identifier from where it was built from.  Typically GH branch name
 buildx() {
   switches "$@"
-  validate_switches tag file
+  validate_switches target tag file cache_id
   varx REPO
 
   echo "--- :building_construction: Build $tag"
+
+  if [[ -z $target ]]; then
+    target=$tag
+  fi
 
   docker buildx build \
     -f $file \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --build-arg CI_BRANCH \
     --build-arg CI_STRING_TIME \
-    --cache-from $BK_ECR:$APP-$tag-cache-$branch \
+    --cache-from $BK_ECR:$APP-$tag-cache-$cache_id \
     --cache-from $BK_ECR:$APP-$tag-cache-master \
     --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
     --ssh default \
+    --target $target \
     -t $REPO:$tag \
     .
 }
 
+# app => name of the application
+# target => (Optional) set the target build stage to build
+# tag => tag for the docker image
+# file => source docker file to build from
+# cache_id => cache identifier from where it was built from.  Typically GH branch name
 buildx_and_cachex () { 
   switches "$@"
-  validate_switches app tag branch file
+  validate_switches app tag cache_id file
   varx REPO
 
-  buildx --app $app --tag $tag --file $file --branch $branch
+  if [[ -z $target ]]; then
+    target=$tag
+  fi
+
+  buildx --app $app --target $target --tag $tag --file $file --cache_id $cache_id
   
   cachex --tag $tag --branch $branch
 }

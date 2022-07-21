@@ -1,6 +1,6 @@
 set -euo pipefail
 
-. "$(dirname $BASH_SOURCE)/../functions.sh"
+. "$(dirname $BASH_SOURCE)/../lib/functions.sh"
 
 prefix="${BUILDKITE_PLUGIN_SBC_SHARED_REPO_PREFIX:-sageone}"
 setup $prefix
