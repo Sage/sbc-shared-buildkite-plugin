@@ -64,7 +64,7 @@ validate_switches() {
   set -u
 }
 
-# target => set the target build stage to build
+# target => (Optional) set the target build stage to build
 # tag => tag for the docker image
 # file => source docker file to build from
 # cache_id => cache identifier from where it was built from.  Typically GH branch name
@@ -76,8 +76,8 @@ buildx() {
 
   echo "--- :building_construction: Build $tag"
 
-  if [[ -z $target ]]; then
-    target=$tag
+  if [[ -n $target ]]; then
+    local OPTIONAL_TARGET="--target $target"
   fi
 
   docker buildx build \
@@ -89,8 +89,7 @@ buildx() {
     --cache-from $BK_ECR:$APP-$tag-cache-master \
     --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
-    --ssh default \
-    --target $target \
+    --ssh default $OPTIONAL_TARGET \
     -t $REPO:$tag \
     .
 }
@@ -106,11 +105,11 @@ buildx_and_cachex () {
   validate_switches app tag cache_id file
   varx REPO
 
-  if [[ -z $target ]]; then
-    target=$tag
+  if [[ -n $target ]]; then
+    local OPTIONAL_TARGET="--target $target"
   fi
 
-  buildx --app $app --target $target --tag $tag --file $file --cache_id $cache_id
+  buildx --app $app $OPTIONAL_TARGET --tag $tag --file $file --cache_id $cache_id
   
   cachex --app $app --tag $tag --cache_id $cache_id
 }
