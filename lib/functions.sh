@@ -110,7 +110,7 @@ buildx_and_cachex () {
 
   buildx --app $app --target $target --tag $tag --file $file --cache_id $cache_id
   
-  cachex --tag $tag --cache_id $cache_id
+  cachex --app $app --tag $tag --cache_id $cache_id
 }
 
 # Push an image into the BK ECR
