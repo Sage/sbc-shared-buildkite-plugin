@@ -69,6 +69,7 @@ validate_switches() {
 # file => source docker file to build from
 # cache_id => cache identifier from where it was built from.  Typically GH branch name
 buildx() {
+  target=
   switches "$@"
   validate_switches tag file cache_id
   varx REPO
@@ -99,7 +100,8 @@ buildx() {
 # tag => tag for the docker image
 # file => source docker file to build from
 # cache_id => cache identifier from where it was built from.  Typically GH branch name
-buildx_and_cachex () { 
+buildx_and_cachex () {
+  target=
   switches "$@"
   validate_switches app tag cache_id file
   varx REPO
