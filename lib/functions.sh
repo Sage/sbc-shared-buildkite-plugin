@@ -76,8 +76,9 @@ buildx() {
 
   echo "--- :building_construction: Build $tag"
 
+  local OPTIONAL_TARGET=
   if [[ -n $target ]]; then
-    local OPTIONAL_TARGET="--target $target"
+    OPTIONAL_TARGET="--target $target"
   fi
 
   docker buildx build \
@@ -105,8 +106,9 @@ buildx_and_cachex () {
   validate_switches app tag cache_id file
   varx REPO
 
+  local OPTIONAL_TARGET=
   if [[ -n $target ]]; then
-    local OPTIONAL_TARGET="--target $target"
+    OPTIONAL_TARGET="--target $target"
   fi
 
   buildx --app $app $OPTIONAL_TARGET --tag $tag --file $file --cache_id $cache_id
