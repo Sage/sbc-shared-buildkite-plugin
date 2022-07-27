@@ -4,7 +4,7 @@ set -e
 
 bundle exec rake build $APP.gemspec
 
-RUBYGEMS_HOST=${GEM_HOST:-"https://sageonegems.jfrog.io/sageonegems/api/gems/gems-local"}
+export RUBYGEMS_HOST=${GEM_HOST:-"https://sageonegems.jfrog.io/sageonegems/api/gems/gems-local"}
 
 echo "Gems Host: $RUBYGEMS_HOST"
 
