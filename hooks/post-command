@@ -1,6 +1,7 @@
 set -euo pipefail
 
 . "$(dirname $BASH_SOURCE)/../lib/functions.sh"
+. "$(dirname $BASH_SOURCE)/../lib/release_jfrog.sh"
 
 ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
 
@@ -14,8 +15,9 @@ if [[ $ACTION == "push_image" ]];then
   if [[ "$ENVIRONMENT" == "qa" ]]; then
     INITIAL_BK_BRANCH="$BK_BRANCH"
 
-    if [[ "$BK_BRANCH" == "master" ]]; then
-      echo "Master test image "
+    # Push a special image based on a merge to the default branch (e.g. master or main)
+    if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
+      echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image "
       BK_BRANCH="test-$BK_BRANCH"
       push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag test
     fi
@@ -32,6 +34,8 @@ elif [[ $ACTION == "push_param" ]];then
   # change directory from which all param logic expects to be run from.
   cd configuration
  ./push.sh $config_path
+elif [[ $ACTION == "publish_gem" ]];then
+  publish_gem
 elif [[ $ACTION == "build" ]];then
   # Load a predetermined custom functions file that a repository may need to use to extend the build process
   CUSTOM_FILE=".buildkite/custom_functions.sh"
