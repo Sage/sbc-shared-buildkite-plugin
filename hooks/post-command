@@ -35,7 +35,7 @@ elif [[ $ACTION == "push_param" ]];then
   cd configuration
  ./push.sh $config_path
 elif [[ $ACTION == "publish_gem" ]];then
-  publish_gem
+  echo ""
 elif [[ $ACTION == "build" ]];then
   # Load a predetermined custom functions file that a repository may need to use to extend the build process
   CUSTOM_FILE=".buildkite/custom_functions.sh"

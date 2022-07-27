@@ -1,20 +1,21 @@
+#!/usr/bin/env bash
 
-publish_gem() {
-  bundle exec rake build $APP.gemspec
+set -e
 
-  local RUBYGEMS_HOST=${GEM_HOST:-"https://sageonegems.jfrog.io/sageonegems/api/gems/gems-local"}
+bundle exec rake build $APP.gemspec
 
-  echo "Gems Host: $RUBYGEMS_HOST"
+local RUBYGEMS_HOST=${GEM_HOST:-"https://sageonegems.jfrog.io/sageonegems/api/gems/gems-local"}
 
-  mkdir -p ~/.gem
-  curl -u $ART_USER:$ART_PASS $RUBYGEMS_HOST/api/v1/api_key.yaml > ~/.gem/credentials
-  chmod 600 ~/.gem/credentials
+echo "Gems Host: $RUBYGEMS_HOST"
 
-  local GEMS_PATH=${GEM_PATH:-"pkg/*.gem"}
+mkdir -p ~/.gem
+curl -u $ART_USER:$ART_PASS $RUBYGEMS_HOST/api/v1/api_key.yaml > ~/.gem/credentials
+chmod 600 ~/.gem/credentials
 
-  echo "Gem Path: $GEMS_PATH"
+local GEMS_PATH=${GEM_PATH:-"pkg/*.gem"}
 
-  gem push /usr/src/app/$GEMS_PATH
+echo "Gem Path: $GEMS_PATH"
 
-  echo "Push Complete"
-}
+gem push /usr/src/app/$GEMS_PATH
+
+echo "Push Complete"

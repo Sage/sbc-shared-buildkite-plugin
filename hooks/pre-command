@@ -25,3 +25,9 @@ fi
 set -u
 export DOCKER_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TAG:-application}"
 export HAS_DB_IMAGE="${BUILDKITE_PLUGIN_SBC_SHARED_HAS_DB_IMAGE:-false}"
+
+# copy scripts to be used by pipeline in order to be invoked within a docker container.
+ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
+if [[ $ACTION == "publish_gem" ]];then
+  cp ../lib/release_jfrog.sh ./buildkite/release.sh
+fi
