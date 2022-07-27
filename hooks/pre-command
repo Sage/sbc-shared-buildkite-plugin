@@ -22,6 +22,11 @@ if [[ -z $ACCOUNT_ID ]]; then
   unset ACCOUNT_ID
 fi
 
+export GEM_HOST="${BUILDKITE_PLUGIN_SBC_SHARED_GEM_HOST}"
+if [[ -z $GEM_HOST ]]; then
+  unset GEM_HOST
+fi
+
 set -u
 export DOCKER_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TAG:-application}"
 export HAS_DB_IMAGE="${BUILDKITE_PLUGIN_SBC_SHARED_HAS_DB_IMAGE:-false}"
