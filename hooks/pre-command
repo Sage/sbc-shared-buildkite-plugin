@@ -27,6 +27,11 @@ if [[ -z $GEM_HOST ]]; then
   unset GEM_HOST
 fi
 
+# Only export the AWS_REGION if it was specified to be overriden.
+if [[ -n $BUILDKITE_PLUGIN_SBC_SHARED_REGION ]]; then
+  export AWS_REGION="${BUILDKITE_PLUGIN_SBC_SHARED_REGION}"
+fi
+
 set -u
 export DOCKER_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TAG:-application}"
 export HAS_DB_IMAGE="${BUILDKITE_PLUGIN_SBC_SHARED_HAS_DB_IMAGE:-false}"
