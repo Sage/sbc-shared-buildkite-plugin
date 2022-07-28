@@ -13,6 +13,8 @@ configuration:
       type: string
     tag:
       type: string
+    target_tag:
+      type: string
     repo_prefix:
       type: string
     region:

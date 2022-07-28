@@ -147,12 +147,16 @@ push_image () {
   validate_switches account_id app tag
   varx BUILDKITE_BUILD_NUMBER
   varx AWS_REGION
-  varx BK_BRANCH  
+  varx BK_BRANCH
 
-  echo "Pushing image for $app"
+  # If the override ENV option was specified in the pipeline, use that tag value.
+  # This supports custom tags like `last-successful-build` that don't match the GH tag/branch that triggered the commit
+  local target_tag=${TARGET_TAG:-$BK_BRANCH}
+
+  echo "Pushing image for $app using tag: $target_tag"
 
   SOURCE_IMAGE=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
-  TARGET_IMAGE=$account_id.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO:$BK_BRANCH
+  TARGET_IMAGE=$account_id.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO:$target_tag
   docker pull $SOURCE_IMAGE
   docker tag $SOURCE_IMAGE $TARGET_IMAGE
   docker push $TARGET_IMAGE
