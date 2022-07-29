@@ -14,8 +14,6 @@ if [[ $ACTION == "push_image" ]];then
   if [[ "$ENVIRONMENT" == "qa" ]]; then
     INITIAL_BK_BRANCH="$BK_BRANCH"
 
-    echo "$BK_BRANCH"
-    echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH"
     # Push a special image based on a merge to the default branch (e.g. master or main)
     if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
       echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image "
@@ -23,7 +21,6 @@ if [[ $ACTION == "push_image" ]];then
       push_image --account_id $ACCOUNT_ID --app $APP --tag test
     fi
     
-    echo "$HAS_DB_IMAGE"
     if [[ "$HAS_DB_IMAGE" == "true" ]]; then
       echo "DB image"
       BK_BRANCH="database-$INITIAL_BK_BRANCH"
