@@ -1,0 +1,11 @@
+version: '3.4'
+services:
+  tests:
+    image: buildkite/plugin-tester
+    volumes:
+      - ".:/plugin"
+  lint:
+    image: buildkite/plugin-linter
+    command: ['--id', 'Sage/sbc-shared']
+    volumes:
+      - ".:/plugin:ro"

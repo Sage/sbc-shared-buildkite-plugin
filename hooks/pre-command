@@ -1,0 +1,46 @@
+set -euo pipefail
+
+. "$(dirname $BASH_SOURCE)/../lib/functions.sh"
+
+prefix="${BUILDKITE_PLUGIN_SBC_SHARED_REPO_PREFIX:-sageone}"
+setup $prefix
+
+set +u
+# Validation of config will be done by each relevant action
+export ENVIRONMENT="${BUILDKITE_PLUGIN_SBC_SHARED_ENVIRONMENT}"
+if [[ -z $ENVIRONMENT ]]; then
+  unset ENVIRONMENT
+fi
+
+export LANDSCAPE="${BUILDKITE_PLUGIN_SBC_SHARED_LANDSCAPE}"
+if [[ -z $LANDSCAPE ]]; then
+  unset LANDSCAPE
+fi
+
+export ACCOUNT_ID="${BUILDKITE_PLUGIN_SBC_SHARED_ACCOUNT_ID}"
+if [[ -z $ACCOUNT_ID ]]; then
+  unset ACCOUNT_ID
+fi
+
+export GEM_HOST="${BUILDKITE_PLUGIN_SBC_SHARED_GEM_HOST}"
+if [[ -z $GEM_HOST ]]; then
+  unset GEM_HOST
+fi
+
+# Only export the AWS_REGION if it was specified to be overriden.
+if [[ -n $BUILDKITE_PLUGIN_SBC_SHARED_REGION ]]; then
+  export AWS_REGION="${BUILDKITE_PLUGIN_SBC_SHARED_REGION}"
+fi
+
+# If the target image needs to have a custom tag other than the GH tag/branch
+export TARGET_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TARGET_TAG:-}"
+
+set -u
+export DOCKER_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TAG:-application}"
+export HAS_DB_IMAGE="${BUILDKITE_PLUGIN_SBC_SHARED_HAS_DB_IMAGE:-false}"
+
+# copy scripts to be used by pipeline in order to be invoked within a docker container.
+ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
+if [[ $ACTION == "publish_gem" ]];then
+  cp "$(dirname $BASH_SOURCE)/../lib/release_jfrog.sh" .buildkite/release.sh
+fi
