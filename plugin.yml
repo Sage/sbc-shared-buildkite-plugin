@@ -21,6 +21,8 @@ configuration:
       type: string
     gem_host:
       type: string
+    db_image:
+      type: boolean
   required:
     - action
   additionalProperties: false

@@ -18,13 +18,13 @@ if [[ $ACTION == "push_image" ]];then
     if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
       echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image "
       BK_BRANCH="test-$BK_BRANCH"
-      push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag test
+      push_image --account_id $ACCOUNT_ID --app $APP --tag test
     fi
-
+    
     if [[ "$HAS_DB_IMAGE" == "true" ]]; then
       echo "DB image"
       BK_BRANCH="database-$INITIAL_BK_BRANCH"
-      push_image --account_id $AWS_ACCOUNT_ID --app $APP --tag database
+      push_image --account_id $ACCOUNT_ID --app $APP --tag database
     fi
   fi
 elif [[ $ACTION == "push_param" ]];then
