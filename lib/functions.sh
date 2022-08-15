@@ -50,7 +50,7 @@ validate_switches() {
   echo "Validating switches"
 
   arr=("$@")
- 
+
   set +u
   for item in "${arr[@]}"
   do
@@ -64,13 +64,27 @@ validate_switches() {
   set -u
 }
 
+# builds a string version ($build_args) of a list of passed --build_args
+compile_build_args() {
+  build_args=''
+
+  passed_params=("$@")
+  for i in "${!passed_params[@]}"; do
+    if [[ ${passed_params[i]} == '--build_arg' ]]; then
+      build_args="$build_args --build_arg ${passed_params[i+1]}"
+    fi
+  done
+}
+
 # target => (Optional) set the target build stage to build
 # tag => tag for the docker image
 # file => source docker file to build from
 # cache_id => cache identifier from where it was built from.  Typically GH branch name
 buildx() {
+  compile_build_args "$@"
   target=
   switches "$@"
+
   validate_switches tag file cache_id
   varx REPO
 
@@ -81,18 +95,23 @@ buildx() {
     OPTIONAL_TARGET="--target $target"
   fi
 
-  docker buildx build \
-    -f $file \
-    --build-arg BUILDKIT_INLINE_CACHE=1 \
-    --build-arg CI_BRANCH \
-    --build-arg CI_STRING_TIME \
-    --cache-from $BK_ECR:$APP-$tag-cache-$cache_id \
-    --cache-from $BK_ECR:$APP-$tag-cache-master \
-    --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
-    --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
-    --ssh default $OPTIONAL_TARGET \
-    -t $REPO:$tag \
-    .
+  args=(
+    "-f $file"
+    "--build-arg BUILDKIT_INLINE_CACHE=1"
+    "--build-arg CI_BRANCH"
+    "--build-arg CI_STRING_TIME"
+    "--cache-from $BK_ECR:$APP-$tag-cache-$cache_id"
+    "--cache-from $BK_ECR:$APP-$tag-cache-master"
+    "--secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM"
+    "--secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO"
+    "--ssh default $OPTIONAL_TARGET"
+    "-t $REPO:$tag"
+    "${build_args/"--build_arg"/"--build-arg"}"
+  )
+
+  concatted_args=$(printf " %s" "${args[@]}")
+  command="docker buildx build ${concatted_args:1} ."
+  eval $command
 }
 
 # app => name of the application
@@ -101,6 +120,7 @@ buildx() {
 # file => source docker file to build from
 # cache_id => cache identifier from where it was built from.  Typically GH branch name
 buildx_and_cachex () {
+  compile_build_args "$@"
   target=
   switches "$@"
   validate_switches app tag cache_id file
@@ -111,8 +131,20 @@ buildx_and_cachex () {
     OPTIONAL_TARGET="--target $target"
   fi
 
-  buildx --app $app $OPTIONAL_TARGET --tag $tag --file $file --cache_id $cache_id
-  
+  args=(
+    "--app $app"
+    "$OPTIONAL_TARGET"
+    "--tag $tag"
+    "--file $file"
+    "--cache_id $cache_id"
+    $build_args
+  )
+
+  concatted_args=$(printf " %s" "${args[@]}")
+  command="buildx ${concatted_args:1} ."
+
+  eval $command
+
   cachex --app $app --tag $tag --cache_id $cache_id
 }
 
