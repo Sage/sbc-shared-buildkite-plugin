@@ -50,7 +50,7 @@ validate_switches() {
   echo "Validating switches"
 
   arr=("$@")
- 
+
   set +u
   for item in "${arr[@]}"
   do
@@ -112,7 +112,7 @@ buildx_and_cachex () {
   fi
 
   buildx --app $app $OPTIONAL_TARGET --tag $tag --file $file --cache_id $cache_id
-  
+
   cachex --app $app --tag $tag --cache_id $cache_id
 }
 
@@ -144,7 +144,7 @@ cachex () {
 # Push an image into a target ECR for deployments
 push_image () {
   switches "$@"
-  validate_switches account_id app tag
+  validate_switches account_id app tag multiarch
   varx BUILDKITE_BUILD_NUMBER
   varx AWS_REGION
   varx BK_BRANCH
@@ -155,9 +155,29 @@ push_image () {
 
   echo "Pushing image for $app using tag: $target_tag"
 
-  SOURCE_IMAGE=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
-  TARGET_IMAGE=$account_id.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO:$target_tag
-  docker pull $SOURCE_IMAGE
-  docker tag $SOURCE_IMAGE $TARGET_IMAGE
-  docker push $TARGET_IMAGE
+  local X86_64_TAG_SUFFIX=""
+
+  if [[ "$multiarch" == "true" ]]; then
+    X86_64_TAG_SUFFIX=-x86_64
+  fi
+
+  TARGET_ECR=$account_id.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO:$target_tag
+
+  SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
+  TARGET_IMAGE_X86_64=$TARGET_ECR$X86_64_TAG_SUFFIX
+  docker pull $SOURCE_IMAGE_X86_64
+  docker tag $SOURCE_IMAGE_X86_64 $TARGET_IMAGE_X86_64
+  docker push $TARGET_IMAGE_X86_64
+
+  if [[ "$multiarch" == "true" ]]; then
+    SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
+    TARGET_IMAGE_ARM64=$TARGET_ECR-arm64
+    docker pull $SOURCE_IMAGE_ARM64
+    docker tag $SOURCE_IMAGE_ARM64 $TARGET_IMAGE_ARM64
+    docker push $TARGET_IMAGE_ARM64
+
+    # Create & push manifest file for multiarch image
+    docker manifest create $TARGET_ECR $TARGET_IMAGE_X86_64 $TARGET_IMAGE_ARM64
+    docker manifest push $TARGET_ECR
+  fi
 }
