@@ -12,19 +12,22 @@ if [[ $ACTION == "push_image" ]];then
 
   # For dev, other images like database and test and master should be pushed.
   if [[ "$ENVIRONMENT" == "qa" ]]; then
-    INITIAL_BK_BRANCH="$BK_BRANCH"
+    # unless we have set TARGET_TAG - as it will push multiple images to the same tag.
+    if [[ -z $TARGET_TAG ]]; then
+      INITIAL_BK_BRANCH="$BK_BRANCH"
 
-    # Push a special image based on a merge to the default branch (e.g. master or main)
-    if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
-      echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image "
-      BK_BRANCH="test-$BK_BRANCH"
-      push_image --account_id $ACCOUNT_ID --app $APP --tag test --multiarch $MULTIARCH_IMAGE_PUSH
-    fi
+      # Push a special image based on a merge to the default branch (e.g. master or main)
+      if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
+        echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image "
+        BK_BRANCH="test-$BK_BRANCH"
+        push_image --account_id $ACCOUNT_ID --app $APP --tag test --multiarch $MULTIARCH_IMAGE_PUSH
+      fi
 
-    if [[ "$HAS_DB_IMAGE" == "true" ]]; then
-      echo "DB image"
-      BK_BRANCH="database-$INITIAL_BK_BRANCH"
-      push_image --account_id $ACCOUNT_ID --app $APP --tag database --multiarch false
+      if [[ "$HAS_DB_IMAGE" == "true" ]]; then
+        echo "DB image"
+        BK_BRANCH="database-$INITIAL_BK_BRANCH"
+        push_image --account_id $ACCOUNT_ID --app $APP --tag database --multiarch false
+      fi
     fi
   fi
 elif [[ $ACTION == "push_param" ]];then
