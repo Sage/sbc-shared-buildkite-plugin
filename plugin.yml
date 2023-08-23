@@ -23,6 +23,8 @@ configuration:
       type: string
     db_image:
       type: boolean
+    push_test_image:
+      type: boolean
   required:
     - action
   additionalProperties: false

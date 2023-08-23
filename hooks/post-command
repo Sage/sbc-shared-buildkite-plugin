@@ -17,7 +17,7 @@ if [[ $ACTION == "push_image" ]];then
       INITIAL_BK_BRANCH="$BK_BRANCH"
 
       # Push a special image based on a merge to the default branch (e.g. master or main)
-      if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
+      if [[ "$BUILDKITE_PLUGIN_SBC_SHARED_PUSH_TEST_IMAGE" =~ ^(true|on|1)$ || "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
         echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image "
         BK_BRANCH="test-$BK_BRANCH"
         push_image --account_id $ACCOUNT_ID --app $APP --tag test --multiarch $MULTIARCH_IMAGE_PUSH

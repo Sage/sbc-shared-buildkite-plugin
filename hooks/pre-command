@@ -42,6 +42,6 @@ export MULTIARCH_IMAGE_PUSH="${BUILDKITE_PLUGIN_SBC_SHARED_MULTIARCH_IMAGE_PUSH:
 
 # copy scripts to be used by pipeline in order to be invoked within a docker container.
 ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
-if [[ $ACTION == "publish_gem" ]];then
+if [[ $ACTION == "publish_gem" ]]; then
   cp "$(dirname $BASH_SOURCE)/../lib/release_jfrog.sh" .buildkite/release.sh
 fi
