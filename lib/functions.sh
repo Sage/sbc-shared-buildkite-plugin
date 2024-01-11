@@ -30,6 +30,7 @@ setup() {
   fi
 
   export BK_ECR=268539851198.dkr.ecr.eu-west-1.amazonaws.com/sageone/buildkite
+  export BK_CACHE=268539851198.dkr.ecr.eu-west-1.amazonaws.com/sageone/cache
 }
 
 # convert --<switch> to a variable
@@ -86,8 +87,8 @@ buildx() {
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --build-arg CI_BRANCH \
     --build-arg CI_STRING_TIME \
-    --cache-from $BK_ECR:$APP-$tag-cache-$cache_id \
-    --cache-from $BK_ECR:$APP-$tag-cache-master \
+    --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
+    --cache-from $BK_CACHE:$APP-$tag-$cache_id \
     --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
     --ssh default $OPTIONAL_TARGET \
