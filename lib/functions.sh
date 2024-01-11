@@ -92,6 +92,7 @@ buildx() {
     --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
     --ssh default $OPTIONAL_TARGET \
+    --push \
     -t $REPO:$tag \
     .
 }
