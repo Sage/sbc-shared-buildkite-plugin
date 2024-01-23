@@ -73,7 +73,7 @@ buildx() {
   validate_switches tag file cache_id
   varx REPO
 
-  echo "--- :building_construction: Build $tag"
+  echo "+++ :building_construction: Build $tag"
 
   local OPTIONAL_TARGET=
   if [[ -n $target ]]; then
@@ -96,26 +96,6 @@ buildx() {
     .
 }
 
-# app => name of the application
-# target => (Optional) set the target build stage to build
-# tag => tag for the docker image
-# file => source docker file to build from
-# cache_id => cache identifier from where it was built from.  Typically GH branch name
-buildx_and_cachex () {
-  target=
-  switches "$@"
-  validate_switches app tag cache_id file
-  varx REPO
-
-  local OPTIONAL_TARGET=
-  if [[ -n $target ]]; then
-    OPTIONAL_TARGET="--target $target"
-  fi
-
-  buildx --app $app $OPTIONAL_TARGET --tag $tag --file $file --cache_id $cache_id
-
-  cachex --app $app --tag $tag --cache_id $cache_id
-}
 
 # Push an image into the BK ECR
 pushx () {
@@ -127,18 +107,6 @@ pushx () {
   echo "--- :floppy_disk: Push $tag"
   local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
   docker tag  $REPO:$tag $BUILD_IMAGE_NAME
-  docker push $BUILD_IMAGE_NAME
-}
-
-# Push an image into the BK ECR for caching builds
-cachex () {
-  switches "$@"
-  validate_switches app tag cache_id
-  varx REPO
-
-  echo "--- :s3: Cache $tag"
-  local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-cache-$cache_id
-  docker tag $REPO:$tag $BUILD_IMAGE_NAME
   docker push $BUILD_IMAGE_NAME
 }
 
