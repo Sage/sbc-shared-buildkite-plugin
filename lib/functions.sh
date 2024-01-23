@@ -11,8 +11,6 @@ setup() {
     exit 1
   fi
 
-  echo "Setting up variables for $1"
-
   # Setup the env that contains the application name and repo name
   export APP=$(cat .buildkite/.application)
   export REPO=$1/$APP
@@ -35,7 +33,6 @@ setup() {
 
 # convert --<switch> to a variable
 switches() {
-  echo "Processing switches"
   while [ $# -gt 0 ]; do
    if [[ $1 == *"--"* ]]; then
         v="${1/--/}"
@@ -48,8 +45,6 @@ switches() {
 
 # validate list of switch names exist as a set variable
 validate_switches() {
-  echo "Validating switches"
-
   arr=("$@")
 
   set +u
@@ -66,9 +61,9 @@ validate_switches() {
 }
 
 # target => (Optional) set the target build stage to build
-# tag => tag for the docker image
-# file => source docker file to build from
-# cache_id => cache identifier from where it was built from.  Typically GH branch name
+# tag => variant of the docker image e.g. app or database
+# file => source Dockerfile
+# cache_id => typically the git branch name
 buildx() {
   target=
   switches "$@"
@@ -84,14 +79,15 @@ buildx() {
 
   docker buildx build \
     -f $file \
-    --build-arg BUILDKIT_INLINE_CACHE=1 \
     --build-arg CI_BRANCH \
     --build-arg CI_STRING_TIME \
     --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
     --cache-from $BK_CACHE:$APP-$tag-$cache_id \
+    --cache-from $BK_CACHE:$APP-$tag-master \
     --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
-    --ssh default $OPTIONAL_TARGET \
+    --ssh default \
+    $OPTIONAL_TARGET \
     --load \
     -t $REPO:$tag \
     .
