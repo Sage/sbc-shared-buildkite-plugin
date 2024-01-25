@@ -72,6 +72,7 @@ buildx() {
   switches "$@"
   validate_switches tag file cache_id
   varx REPO
+  varx BUILDKITE_PIPELINE_DEFAULT_BRANCH
 
   echo "+++ :building_construction: Build $tag"
 
@@ -86,7 +87,7 @@ buildx() {
     --build-arg CI_STRING_TIME \
     --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
     --cache-from $BK_CACHE:$APP-$tag-$cache_id \
-    --cache-from $BK_CACHE:$APP-$tag-master \
+    --cache-from $BK_CACHE:$APP-$tag-$BUILDKITE_PIPELINE_DEFAULT_BRANCH \
     --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
     --ssh default \
