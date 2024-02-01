@@ -50,5 +50,5 @@ elif [[ $ACTION == "build" ]]; then
   . ".buildkite/build.sh"
 else
   echo "Unsupport action name of $ACTION"
-  exit 1
+  # exit 1
 fi
