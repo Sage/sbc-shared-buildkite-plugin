@@ -26,7 +26,7 @@ if [[ $ACTION == "push_image" ]];then
       if [[ "$HAS_DB_IMAGE" == "true" ]]; then
         echo "DB image"
         BK_BRANCH="database-$INITIAL_BK_BRANCH"
-        push_image --account_id $ACCOUNT_ID --app $APP --tag database --multiarch false
+        push_image --account_id $ACCOUNT_ID --app $APP --tag database --multiarch $MULTIARCH_IMAGE_PUSH
       fi
     fi
   fi
