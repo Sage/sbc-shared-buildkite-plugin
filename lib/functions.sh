@@ -90,6 +90,7 @@ buildx() {
     --cache-from $BK_CACHE:$APP-$tag-$BUILDKITE_PIPELINE_DEFAULT_BRANCH \
     --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
+    --secret id=jfrog_npm,env=SAGEONEGEMS_JFROG_NPM_TOKEN \
     --ssh default \
     $OPTIONAL_TARGET \
     --load \
