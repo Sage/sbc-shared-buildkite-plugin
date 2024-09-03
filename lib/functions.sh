@@ -15,8 +15,13 @@ setup() {
   export APP=$(cat .buildkite/.application)
   export REPO=$1/$APP
 
-  # Setup the proper docker tag to be used depending on GH tag and/or branch
-  export BK_BRANCH="${BUILDKITE_BRANCH:-$BUILDKITE_TAG}"
+  # Setup the proper docker tag to be used depending on GH tag and/or branch.
+  #
+  # Note that merge queues may use a branch name such as
+  # gh-readonly-queue/master/pr-1302-7f6d0543067187068f04eefcb7c3edd3b0e7e3ab
+  # so we can use the basename of such branches.
+  branch_name=$(basename $BUILDKITE_BRANCH)
+  export BK_BRANCH="${branch_name:-$BUILDKITE_TAG}"
 
   # Setup CI branch and time used by various other tools. E.g. ssm pusher
   export CI_STRING_TIME=$(date '+%Y-%m-%d %H:%M:%S')
