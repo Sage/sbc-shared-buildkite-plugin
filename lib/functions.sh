@@ -32,8 +32,8 @@ setup() {
     export BUILDKIT_PROGRESS=plain
   fi
 
-  export BK_ECR=268539851198.dkr.ecr.eu-west-1.amazonaws.com/sageone/buildkite
-  export BK_CACHE=268539851198.dkr.ecr.eu-west-1.amazonaws.com/sageone/cache
+  export BK_ECR=268539851198.dkr.ecr.$AWS_REGION.amazonaws.com/sageone/buildkite
+  export BK_CACHE=268539851198.dkr.ecr.$AWS_REGION.amazonaws.com/sageone/cache
 
   # Needed for --cache-from and --cache-to
   docker buildx create --use --bootstrap
