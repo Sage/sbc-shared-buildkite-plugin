@@ -32,8 +32,8 @@ setup() {
     export BUILDKIT_PROGRESS=plain
   fi
 
-  export BK_ECR=268539851198.dkr.ecr.eu-west-1.amazonaws.com/sageone/buildkite
-  export BK_CACHE=268539851198.dkr.ecr.eu-west-1.amazonaws.com/sageone/cache
+  export BK_ECR=268539851198.dkr.ecr.$AWS_REGION.amazonaws.com/sageone/buildkite
+  export BK_CACHE=268539851198.dkr.ecr.$AWS_REGION.amazonaws.com/sageone/cache
 
   # Needed for --cache-from and --cache-to
   docker buildx create --use --bootstrap
@@ -122,7 +122,7 @@ push_image () {
   switches "$@"
   validate_switches account_id app tag multiarch
   varx BUILDKITE_BUILD_NUMBER
-  varx AWS_REGION
+  varx REGION
   varx BK_BRANCH
 
   # If the override ENV option was specified in the pipeline, use that tag value.
@@ -137,7 +137,7 @@ push_image () {
     X86_64_TAG_SUFFIX=-x86_64
   fi
 
-  TARGET_ECR=$account_id.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO:$target_tag
+  TARGET_ECR=$account_id.dkr.ecr.$REGION.amazonaws.com/$REPO:$target_tag
 
   SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
   TARGET_IMAGE_X86_64=$TARGET_ECR$X86_64_TAG_SUFFIX

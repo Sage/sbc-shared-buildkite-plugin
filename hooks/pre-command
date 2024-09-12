@@ -27,9 +27,9 @@ if [[ -z $GEM_HOST ]]; then
   unset GEM_HOST
 fi
 
-# Only export the AWS_REGION if it was specified to be overriden.
+# Only export the REGION if it was specified to be overriden.
 if [[ -n $BUILDKITE_PLUGIN_SBC_SHARED_REGION ]]; then
-  export AWS_REGION="${BUILDKITE_PLUGIN_SBC_SHARED_REGION}"
+  export REGION="${BUILDKITE_PLUGIN_SBC_SHARED_REGION}"
 fi
 
 # If the target image needs to have a custom tag other than the GH tag/branch

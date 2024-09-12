@@ -4,7 +4,7 @@ set -euo pipefail
 
 ACTION="$BUILDKITE_PLUGIN_SBC_SHARED_ACTION"
 
-if [[ $ACTION == "push_image" ]];then
+if [[ $ACTION == "push_image" ]]; then
   echo "--- :floppy_disk: Push $ENVIRONMENT image for $APP"
 
   # Push the docker image
