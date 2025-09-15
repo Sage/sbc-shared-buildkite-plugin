@@ -122,7 +122,7 @@ push_image () {
   switches "$@"
   validate_switches account_id app tag multiarch
   varx BUILDKITE_BUILD_NUMBER
-  varx REGION
+  varx S1_REGION
   varx BK_BRANCH
 
   # If the override ENV option was specified in the pipeline, use that tag value.
@@ -137,7 +137,7 @@ push_image () {
     X86_64_TAG_SUFFIX=-x86_64
   fi
 
-  TARGET_ECR=$account_id.dkr.ecr.$REGION.amazonaws.com/$REPO:$target_tag
+  TARGET_ECR=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:$target_tag
 
   SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
   TARGET_IMAGE_X86_64=$TARGET_ECR$X86_64_TAG_SUFFIX
