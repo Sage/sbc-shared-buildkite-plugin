@@ -35,7 +35,11 @@ elif [[ $ACTION == "push_param" ]]; then
 
   # change directory from which all param logic expects to be run from.
   cd configuration
-  AWS_REGION=$S1_REGION ./push.sh $config_path
+  if [[ -n $S1_REGION ]]; then
+    AWS_REGION=$S1_REGION ./push.sh $config_path
+  else
+    ./push.sh $config_path
+  fi
 elif [[ $ACTION == "publish_gem" ]]; then
   echo ""
 elif [[ $ACTION == "build" ]]; then
