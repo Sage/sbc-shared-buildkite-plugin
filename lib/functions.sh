@@ -26,6 +26,7 @@ setup() {
   # Setup CI branch and time used by various other tools. E.g. ssm pusher
   export CI_STRING_TIME=$(date '+%Y-%m-%d %H:%M:%S')
   export CI_BRANCH=$BK_BRANCH
+  export CI_COMMIT=$BUILDKITE_COMMIT
 
   # Change the output of the docker build process to not be truncated in BK
   if [[ "$BUILDKITE" == "true" ]]; then
@@ -90,6 +91,7 @@ buildx() {
     -f $file \
     --build-arg CI_BRANCH \
     --build-arg CI_STRING_TIME \
+    --build-arg CI_COMMIT \
     --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
     --cache-from $BK_CACHE:$APP-$tag-$cache_id \
     --cache-from $BK_CACHE:$APP-$tag-$BUILDKITE_PIPELINE_DEFAULT_BRANCH \
