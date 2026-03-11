@@ -88,10 +88,11 @@ buildx() {
   fi
 
   docker buildx build \
-    -f $file \
+    --file $file \
     --build-arg CI_BRANCH \
     --build-arg CI_STRING_TIME \
     --build-arg CI_COMMIT \
+    --build-arg CACHEBUST=$(date +%Y-%m-%d) \
     --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
     --cache-from $BK_CACHE:$APP-$tag-$cache_id \
     --cache-from $BK_CACHE:$APP-$tag-$BUILDKITE_PIPELINE_DEFAULT_BRANCH \
@@ -102,10 +103,9 @@ buildx() {
     --ssh default \
     $OPTIONAL_TARGET \
     --load \
-    -t $REPO:$tag \
+    --tag $REPO:$tag \
     .
 }
-
 
 # Push an image into the BK ECR
 pushx () {
@@ -116,7 +116,7 @@ pushx () {
 
   echo "--- :floppy_disk: Push $tag"
   local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
-  docker tag  $REPO:$tag $BUILD_IMAGE_NAME
+  docker tag $REPO:$tag $BUILD_IMAGE_NAME
   docker push $BUILD_IMAGE_NAME
 }
 
