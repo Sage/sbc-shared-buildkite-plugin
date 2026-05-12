@@ -37,7 +37,10 @@ setup() {
   export BK_CACHE=268539851198.dkr.ecr.$AWS_REGION.amazonaws.com/sageone/cache
 
   # Needed for --cache-from and --cache-to
-  docker buildx create --use --bootstrap
+  local builder_name=buildx-builder
+  if ! docker buildx inspect $builder_name > /dev/null 2>&1; then
+    docker buildx create --driver docker-container --name $builder_name --use --bootstrap
+  fi
 }
 
 # convert --<switch> to a variable
