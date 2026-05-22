@@ -13,8 +13,8 @@ if [[ $ACTION == "push_image" ]]; then
   # Push the docker image
   push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG --multiarch $MULTIARCH_IMAGE_PUSH
 
-  if [ -n "$BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX" ]; then
-    BK_BRANCH="$BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX-$INITIAL_BK_BRANCH"
+  if [ -n "${BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX:-}" ]; then
+    BK_BRANCH="$INITIAL_BK_BRANCH-$BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX"
     push_image --account_id $ACCOUNT_ID --app $APP --tag "${DOCKER_TAG}-${BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX}" --multiarch $MULTIARCH_IMAGE_PUSH
   fi
 
