@@ -23,6 +23,8 @@ configuration:
       type: string
     db_image:
       type: boolean
+    extra_suffix:
+      type: string
   required:
     - action
   additionalProperties: false
