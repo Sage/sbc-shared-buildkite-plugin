@@ -1,8 +1,10 @@
 varx () {
-  if [[ -z "${!1}" ]]; then
-    echo "$1 is not set."
-    exit 1
-  fi
+  for var_name in "$@"; do
+    if [[ -z "${!var_name}" ]]; then
+      echo "$var_name is not set."
+      exit 1
+    fi
+  done
 }
 
 setup() {
@@ -80,8 +82,7 @@ buildx() {
   target=
   switches "$@"
   validate_switches tag file cache_id
-  varx REPO
-  varx BUILDKITE_PIPELINE_DEFAULT_BRANCH
+  varx REPO BUILDKITE_PIPELINE_DEFAULT_BRANCH
 
   echo "+++ :building_construction: Build $tag"
 
@@ -114,8 +115,7 @@ buildx() {
 pushx () {
   switches "$@"
   validate_switches app tag
-  varx REPO
-  varx BUILDKITE_BUILD_NUMBER
+  varx REPO BUILDKITE_BUILD_NUMBER
 
   echo "--- :floppy_disk: Push $tag"
   local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
@@ -135,9 +135,7 @@ pushx () {
 push_image () {
   switches "$@"
   validate_switches account_id app tag multiarch
-  varx BUILDKITE_BUILD_NUMBER
-  varx S1_REGION
-  varx BK_BRANCH
+  varx BUILDKITE_BUILD_NUMBER S1_REGION BK_BRANCH
 
   # If the override ENV option was specified in the pipeline, use that tag value.
   # This supports custom tags like `last-successful-build` that don't match the GH tag/branch that triggered the commit
