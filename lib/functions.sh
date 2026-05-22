@@ -123,7 +123,15 @@ pushx () {
   docker push $BUILD_IMAGE_NAME
 }
 
-# Push an image into a target ECR for deployments
+# Push an image into a target ECR for deployment
+# Variables used:
+# account_id: AWS account id which the image will be pushed to. Used to construct the final ECR address.
+# app: Application name e.g. 'sage_one_advanced'. Used to find the source image in the Buildkite ECR.
+# tag: Image variant e.g 'application', 'test' or 'database'.
+# multiarch: Whether to push a manifest with images for both amd64 and arm64 architectures.
+# BUILDKITE_BUILD_NUMBER: Used to find the source image in the Buildkite ECR.
+# S1_REGION: AWS region of the target ECR.
+# BK_BRANCH: The git branch or tag being built, used to determine the target docker image tag in the target ECR, unless that is overridden by TARGET_TAG.
 push_image () {
   switches "$@"
   validate_switches account_id app tag multiarch
