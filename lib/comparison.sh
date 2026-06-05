@@ -24,20 +24,25 @@ export ARTIFACT_PATH="master-coverage/.last_run.json"
 BUILD_ID=$(
   curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
     "https://api.buildkite.com/v2/organizations/$ORG/pipelines/$PIPELINE/builds?branch=master&state=passed&per_page=1" \
-  | ruby -rjson -e 'puts JSON.parse(STDIN.read).last["number"]'
+  | tr -d '\n' \
+  | sed -n 's/.*"number":[[:space:]]*\([0-9][0-9]*\).*/\1/p' \
+  | head -1
 )
-echo $BUILD_ID
+echo "$BUILD_ID"
 
 # 2) List artifacts for that build and find the one you want
 curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
   "https://api.buildkite.com/v2/organizations/$ORG/pipelines/$PIPELINE/builds/$BUILD_ID/artifacts?page=3&per_page=100" \
   -o artifacts.json
 
-DOWNLOAD_URL=$(ruby -rjson -e '
-  artifacts = JSON.parse(File.read(File.join(Dir.pwd, "artifacts.json")))
-  a = artifacts.find { |x| x["path"] == ENV.fetch("ARTIFACT_PATH") }
-  puts(a ? a["download_url"] : "")
-' ARTIFACT_PATH="$ARTIFACT_PATH")
+DOWNLOAD_URL=$(
+  tr -d '\n' < artifacts.json \
+  | sed 's/},{/},\
+{/g' \
+  | grep -F "\"path\":\"$ARTIFACT_PATH\"" \
+  | sed -n 's/.*"download_url":"\([^"]*\)".*/\1/p' \
+  | head -1
+)
 
 
 if [[ -z "$DOWNLOAD_URL" ]]; then
@@ -55,13 +60,18 @@ echo "$DOWNLOAD_URL"
 
 buildkite-agent artifact download "coverage/.last_run.json" .
 
-baseline_coverage=$(ruby -rjson -e 'puts JSON.parse(File.read("coverage-baseline.json"))["result"]["line"]')
-current_coverage=$(ruby -rjson -e 'puts JSON.parse(File.read("coverage/.last_run.json"))["result"]["line"]')
+baseline_coverage=$(sed -n 's/.*"line":[[:space:]]*\([0-9.][0-9.]*\).*/\1/p' coverage-baseline.json | head -1)
+current_coverage=$(sed -n 's/.*"line":[[:space:]]*\([0-9.][0-9.]*\).*/\1/p' coverage/.last_run.json | head -1)
+
+if [[ -z "$baseline_coverage" || -z "$current_coverage" ]]; then
+  echo "Unable to parse coverage values from baseline/current JSON files." >&2
+  exit 1
+fi
 
 echo "Baseline coverage: ${baseline_coverage}%"
 echo "Current coverage: ${current_coverage}%"
 
-if ruby -e 'current = Float(ARGV[0]); baseline = Float(ARGV[1]); exit(current < baseline ? 0 : 1)' "$current_coverage" "$baseline_coverage"; then
+if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { exit !(current + 0 < baseline + 0) }'; then
   echo "FAIL: PR coverage (${current_coverage}%) is below master baseline (${baseline_coverage}%)."
   annotate_coverage_gate "error" "Coverage gate failed: PR coverage (${current_coverage}%) is below master baseline (${baseline_coverage}%)."
   exit 1
