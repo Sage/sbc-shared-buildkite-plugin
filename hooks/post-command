@@ -54,8 +54,8 @@ elif [[ $ACTION == "build" ]]; then
 
   # execute the predetermined build script that a repository must have.
   . ".buildkite/build.sh"
-elif [[ $ACTION == "coverage_gate" ]]; then
-  . "$(dirname $BASH_SOURCE)/../lib/comparison.sh"
+elif [[ $ACTION == "coverage_metrics" ]]; then
+  . "$(dirname $BASH_SOURCE)/../lib/code_coverage_checker.sh"
 else
   echo "Unsupport action name of $ACTION"
   exit 1
