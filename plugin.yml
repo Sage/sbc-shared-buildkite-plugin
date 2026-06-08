@@ -25,6 +25,8 @@ configuration:
       type: boolean
     extra_suffix:
       type: string
+    base_branch:
+      type: string
   required:
     - action
   additionalProperties: false
