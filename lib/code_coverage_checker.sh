@@ -136,7 +136,6 @@ BASE_BUILD_ID="${BASE_BUILD_ID// /}"
 
 if [[ -z "${BASE_BUILD_ID:-}" ]]; then
   echo "Could not resolve BUILD_ID from Buildkite API response for branch '$BASE_BRANCH'." >&2
-  echo "Verify: 1) BUILDKITE_API_TOKEN is valid, 2) ORG=$ORG and PIPELINE=$BUILDKITE_PIPELINE_NAME exist, 3) branch '$BASE_BRANCH' has passed builds." >&2
   exit 1
 fi
 
@@ -170,9 +169,9 @@ echo "Current coverage: ${current_coverage}%"
 
 if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { exit !(current + 0 < baseline + 0) }'; then
   echo "FAIL: PR coverage (${current_coverage}%) is below master baseline (${baseline_coverage}%)."
-  annotate_coverage_gate "error" "Coverage gate failed: PR coverage (${current_coverage}%) is below master baseline (${baseline_coverage}%)."
+  annotate_coverage_gate "error" "Coverage check regression: PR coverage (${current_coverage}%) is below master baseline (${baseline_coverage}%)."
   exit 1
 fi
 
 echo "OK: PR coverage is >= master baseline."
-annotate_coverage_gate "success" "Coverage gate passed: PR coverage (${current_coverage}%) is greater than or equal to master baseline (${baseline_coverage}%)."
+annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) is greater than or equal to master baseline (${baseline_coverage}%)."
