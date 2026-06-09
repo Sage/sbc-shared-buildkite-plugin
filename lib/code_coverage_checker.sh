@@ -2,7 +2,7 @@
 set -euo pipefail
 BUILDKITE_API_TOKEN="${BUILDKITE_API_TOKEN:-}"
 ORG="${ORG:-sage-group-plc}"
-BUILDKITE_PIPELINE_NAME="${BUILDKITE_PIPELINE_SLUG:-}"
+BUILDKITE_PIPELINE_SLUG="${BUILDKITE_PIPELINE_SLUG:-}"
 BASE_BRANCH="${BUILDKITE_PIPELINE_DEFAULT_BRANCH:-master}"
 BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-}"
 
@@ -30,15 +30,20 @@ if [[ -z "${BUILDKITE_API_TOKEN:-}" ]]; then
   exit 1
 fi
 
-if [[ -z "${BUILDKITE_PIPELINE_NAME:-}" ]]; then
-  echo "BUILDKITE_PIPELINE_NAME variables must be set to resolve Buildkite artifacts." >&2
+if [[ -z "${BUILDKITE_PIPELINE_SLUG:-}" ]]; then
+  echo "BUILDKITE_PIPELINE_SLUG variables must be set to resolve Buildkite artifacts." >&2
+  exit 1
+fi
+
+if [[ -z "${BUILDKITE_BUILD_NUMBER:-}" ]]; then
+  echo "BUILDKITE_BUILD_NUMBER must be set to resolve current build artifacts." >&2
   exit 1
 fi
 
 buildkite_api_get() {
   local endpoint="$1"
   curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-    "https://api.buildkite.com/v2/organizations/$ORG/pipelines/$BUILDKITE_PIPELINE_NAME/$endpoint"
+    "https://api.buildkite.com/v2/organizations/$ORG/pipelines/$BUILDKITE_PIPELINE_SLUG/$endpoint"
 }
 
 latest_passed_build_id() {
@@ -130,8 +135,7 @@ extract_line_coverage() {
   sed -n 's/.*"line":[[:space:]]*\([0-9.][0-9.]*\).*/\1/p' "$file" | head -1
 }
 
-BASE_BUILD_ID="${BASE_BUILD_ID:-$(latest_passed_build_id "$BASE_BRANCH") }"
-BASE_BUILD_ID="${BASE_BUILD_ID// /}"
+BASE_BUILD_ID="${BASE_BUILD_ID:-$(latest_passed_build_id "$BASE_BRANCH")}"
 
 if [[ -z "${BASE_BUILD_ID:-}" ]]; then
   echo "Could not resolve BUILD_ID from Buildkite API response for branch '$BASE_BRANCH'." >&2
@@ -167,10 +171,12 @@ echo "Baseline coverage: ${baseline_coverage}%"
 echo "Current coverage: ${current_coverage}%"
 
 if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { exit !(current + 0 < baseline + 0) }'; then
-  echo "FAIL: PR coverage (${current_coverage}%) is below master baseline (${baseline_coverage}%)."
-  annotate_coverage_gate "error" "Coverage check regression: PR coverage (${current_coverage}%) is below master baseline (${baseline_coverage}%)."
+  echo "FAIL: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
+  annotate_coverage_gate "error" "Coverage check regression: PR coverage (${current_coverage}%) is
+                                  below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
   exit 1
 fi
 
-echo "OK: PR coverage is >= master baseline."
-annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) is greater than or equal to master baseline (${baseline_coverage}%)."
+echo "OK: PR coverage is >= ${BASE_BRANCH} baseline."
+annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) is
+                                 greater than or equal to ${BASE_BRANCH} baseline (${baseline_coverage}%)."
