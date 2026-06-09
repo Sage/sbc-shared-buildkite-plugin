@@ -4,7 +4,7 @@ set -euo pipefail
 BUILDKITE_API_TOKEN="${BUILDKITE_API_TOKEN:-}"
 ORG="${ORG:-sage-group-plc}"
 BUILDKITE_PIPELINE_NAME="${BUILDKITE_PIPELINE_NAME:-}"
-BASE_BRANCH="${BASE_BRANCH:-master}"
+BASE_BRANCH="${BUILDKITE_PIPELINE_DEFAULT_BRANCH:-master}"
 BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-}"
 
 # Artifact paths to resolve from Buildkite artifacts API.
@@ -45,10 +45,28 @@ buildkite_api_get() {
 
 latest_passed_build_id() {
   local branch="$1"
-  buildkite_api_get "builds?branch=$branch&state=passed&page=1&per_page=100" \
+  local api_response
+
+  api_response="$(buildkite_api_get "builds?branch=$branch&state=passed&page=1&per_page=100")"
+
+  if [[ -z "$api_response" ]]; then
+    echo "API returned empty response for branch: $branch" >&2
+    return 1
+  fi
+
+  local build_id
+  build_id="$(echo "$api_response" \
     | grep -oE '"number"[[:space:]]*:[[:space:]]*[0-9]+' \
     | head -1 \
-    | grep -oE '[0-9]+' || true
+    | grep -oE '[0-9]+' || true)"
+
+  if [[ -z "$build_id" ]]; then
+    echo "No passed builds found for branch: $branch" >&2
+    echo "API response: $api_response" >&2
+    return 1
+  fi
+
+  echo "$build_id"
 }
 
 find_artifact_download_url() {
@@ -118,7 +136,8 @@ BASE_BUILD_ID="${BASE_BUILD_ID:-$(latest_passed_build_id "$BASE_BRANCH") }"
 BASE_BUILD_ID="${BASE_BUILD_ID// /}"
 
 if [[ -z "${BASE_BUILD_ID:-}" ]]; then
-  echo "Could not resolve BUILD_ID from Buildkite API response." >&2
+  echo "Could not resolve BUILD_ID from Buildkite API response for branch '$BASE_BRANCH'." >&2
+  echo "Verify: 1) BUILDKITE_API_TOKEN is valid, 2) ORG=$ORG and PIPELINE=$BUILDKITE_PIPELINE_NAME exist, 3) branch '$BASE_BRANCH' has passed builds." >&2
   exit 1
 fi
 
