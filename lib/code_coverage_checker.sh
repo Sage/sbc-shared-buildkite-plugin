@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 BUILDKITE_API_TOKEN="${BUILDKITE_API_TOKEN:-}"
 ORG="${ORG:-sage-group-plc}"
-BUILDKITE_PIPELINE_NAME="${BUILDKITE_PIPELINE_NAME:-}"
-BASE_BRANCH="${BUILDKITE_PIPELINE_DEFAULT_BRANCH:-upload-coverage-metrics}"
+BUILDKITE_PIPELINE_NAME="${PIPELINE:-${BUILDKITE_PIPELINE_NAME:-}}"
+BASE_BRANCH="${BASE_BRANCH:-${BUILDKITE_PIPELINE_DEFAULT_BRANCH:-master}}"
+BASE_BRANCH_CANDIDATES="${BASE_BRANCH_CANDIDATES:-$BASE_BRANCH main master upload-coverage-metrics}"
 BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-}"
 
 # Artifact paths to resolve from Buildkite artifacts API.
@@ -32,9 +34,23 @@ if [[ -z "${BUILDKITE_API_TOKEN:-}" ]]; then
 fi
 
 if [[ -z "${BUILDKITE_PIPELINE_NAME:-}" ]]; then
-  echo "BUILDKITE_PIPELINE_NAME variables must be set to resolve Buildkite artifacts." >&2
+  echo "BUILDKITE_PIPELINE_NAME (or PIPELINE) must be set to resolve Buildkite artifacts." >&2
   exit 1
 fi
+
+if [[ -z "${BUILDKITE_BUILD_NUMBER:-}" ]]; then
+  echo "BUILDKITE_BUILD_NUMBER is not set. Unable to resolve current build artifacts." >&2
+  exit 1
+fi
+
+print_runtime_context() {
+  echo "Coverage gate context:" >&2
+  echo "  ORG=$ORG" >&2
+  echo "  BUILDKITE_PIPELINE_NAME=$BUILDKITE_PIPELINE_NAME" >&2
+  echo "  BASE_BRANCH=$BASE_BRANCH" >&2
+  echo "  BASE_BRANCH_CANDIDATES=$BASE_BRANCH_CANDIDATES" >&2
+  echo "  BUILDKITE_BUILD_NUMBER=$BUILDKITE_BUILD_NUMBER" >&2
+}
 
 buildkite_api_get() {
   local endpoint="$1"
@@ -61,11 +77,34 @@ latest_passed_build_id() {
 
   if [[ -z "$build_id" ]]; then
     echo "No passed builds found for branch: $branch" >&2
-    echo "API response: $api_response" >&2
+    echo "API response (first 500 chars): ${api_response:0:500}" >&2
     return 1
   fi
 
   echo "$build_id"
+}
+
+resolve_base_build_id() {
+  local seen=" "
+  local branch
+  local build_id
+
+  for branch in $BASE_BRANCH_CANDIDATES; do
+    if [[ "$seen" == *" $branch "* ]]; then
+      continue
+    fi
+    seen+="$branch "
+
+    build_id="$(latest_passed_build_id "$branch" || true)"
+    build_id="${build_id// /}"
+    if [[ -n "$build_id" ]]; then
+      BASE_BRANCH="$branch"
+      echo "$build_id"
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 find_artifact_download_url() {
@@ -131,12 +170,13 @@ extract_line_coverage() {
   sed -n 's/.*"line":[[:space:]]*\([0-9.][0-9.]*\).*/\1/p' "$file" | head -1
 }
 
-BASE_BUILD_ID="${BASE_BUILD_ID:-$(latest_passed_build_id "$BASE_BRANCH") }"
+BASE_BUILD_ID="${BASE_BUILD_ID:-$(resolve_base_build_id || true) }"
 BASE_BUILD_ID="${BASE_BUILD_ID// /}"
 
 if [[ -z "${BASE_BUILD_ID:-}" ]]; then
+  print_runtime_context
   echo "Could not resolve BUILD_ID from Buildkite API response for branch '$BASE_BRANCH'." >&2
-  echo "Verify: 1) BUILDKITE_API_TOKEN is valid, 2) ORG=$ORG and PIPELINE=$BUILDKITE_PIPELINE_NAME exist, 3) branch '$BASE_BRANCH' has passed builds." >&2
+  echo "Verify: 1) BUILDKITE_API_TOKEN is valid, 2) ORG and pipeline are correct, 3) at least one baseline branch has passed builds." >&2
   exit 1
 fi
 
