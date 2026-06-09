@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
 BUILDKITE_API_TOKEN="${BUILDKITE_API_TOKEN:-}"
 ORG="${ORG:-sage-group-plc}"
 BUILDKITE_PIPELINE_NAME="${BUILDKITE_PIPELINE_NAME:-}"
-BASE_BRANCH="${BUILDKITE_PIPELINE_DEFAULT_BRANCH:-master}"
+BASE_BRANCH="${BUILDKITE_PIPELINE_DEFAULT_BRANCH:-upload-coverage-metrics}"
 BUILDKITE_BUILD_NUMBER="${BUILDKITE_BUILD_NUMBER:-}"
 
 # Artifact paths to resolve from Buildkite artifacts API.
