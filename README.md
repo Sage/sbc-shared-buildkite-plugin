@@ -28,7 +28,7 @@ The coverage gate script performs the following steps:
 
 4. **Compares Coverage Metrics**
    - Compares current PR coverage against baseline coverage.
-   - Fails (exit 1) if PR coverage is **below** baseline.
+   - Fails (exit 1) if PR coverage is **below** baseline
    - Passes (exit 0) if PR coverage is **equal to or above** baseline.
 
 5. **Annotates Buildkite**

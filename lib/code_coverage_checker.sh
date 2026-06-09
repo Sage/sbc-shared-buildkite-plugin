@@ -27,7 +27,6 @@ annotate_coverage_gate() {
 
 if [[ -z "${BUILDKITE_API_TOKEN:-}" ]]; then
   echo "BUILDKITE_API_TOKEN is not set in this step environment." >&2
-  echo "The docker-compose plugin 'env: [BUILDKITE_API_TOKEN]' only forwards existing vars from the agent." >&2
   exit 1
 fi
 
