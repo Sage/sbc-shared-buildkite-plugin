@@ -56,9 +56,19 @@ Environment variables to customize behavior:
 ### Usage in Buildkite Pipeline
 
 ```yaml
-steps:
-  - label: ":bar_chart: Coverage check regression"
-    command: bash lib/code_coverage_checker.sh
-    env:
-      - BUILDKITE_API_TOKEN
+- label: ':bar_chart: Code coverage regression'
+    retry:
+      automatic:
+      signal_reason: agent_stop
+    plugins:
+      - ecr#v2.9.0:
+          login: true
+          account-ids: '522104923602'
+          region: 'eu-west-1'
+          assume_role:
+          role_arn: 'arn:aws:iam::522104923602:role/CI.Integration'
+      - ssh://git@github.com/Sage/sbc-shared-buildkite-plugin.git#2.9.0:
+          action: coverage_metrics
+    agents:
+      queue: bk-apse2-x86
 ```
