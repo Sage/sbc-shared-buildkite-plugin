@@ -10,9 +10,7 @@ The `lib/code_coverage_checker.sh` script implements a coverage gate that valida
 The coverage gate script performs the following steps:
 
 1. **Resolves Baseline Build ID**
-   - Queries the Buildkite API for the latest passed build on the baseline branch.
-   - Falls back to alternative branches (`master`).
-   - Ensures you always compare against a valid baseline.
+   - Queries the Buildkite API for the latest passed build on the configured baseline branch (`BASE_BRANCH`).
 
 2. **Downloads Baseline Coverage Artifact**
    - Fetches coverage metrics from the baseline build using pagination.
@@ -43,7 +41,7 @@ Environment variables to customize behavior:
 |----------|---------|---------|
 | `BUILDKITE_API_TOKEN` | (required) | Buildkite API token for authentication |
 | `ORG` | `sage-group-plc` | Buildkite organization name |
-| `BUILDKITE_PIPELINE_NAME` | (from env) | Pipeline name; reads from `BUILDKITE_PIPELINE_SLUG` if set |
+| `BUILDKITE_PIPELINE_SLUG` | (from env) | Pipeline name; reads from `BUILDKITE_PIPELINE_SLUG` if set |
 | `BASE_BRANCH` | `master` | Baseline branch for coverage comparison |
 | `BUILDKITE_BUILD_NUMBER` | (from env) | Current build number (auto-set in CI) |
 | `BASELINE_COVERAGE_ARTIFACT` | `coverage/.last_run.json` | Path to baseline coverage artifact in Buildkite |
@@ -57,18 +55,18 @@ Environment variables to customize behavior:
 
 ```yaml
 - label: ':bar_chart: Code coverage regression'
-    retry:
-      automatic:
-      signal_reason: agent_stop
-    plugins:
-      - ecr#v2.9.0:
-          login: true
-          account-ids: '522104923602'
-          region: 'eu-west-1'
-          assume_role:
-          role_arn: 'arn:aws:iam::522104923602:role/CI.Integration'
-      - ssh://git@github.com/Sage/sbc-shared-buildkite-plugin.git#2.9.0:
-          action: coverage_metrics
+  retry:
+    automatic:
+    signal_reason: agent_stop
+  plugins:
+    - ecr#v2.9.0:
+      login: true
+      account-ids: '522104923602'
+      region: 'eu-west-1'
+      assume_role:
+      role_arn: 'arn:aws:iam::522104923602:role/CI.Integration'
+    - ssh://git@github.com/Sage/sbc-shared-buildkite-plugin.git#2.9.0:
+      action: coverage_metrics
     agents:
       queue: bk-apse2-x86
 ```
