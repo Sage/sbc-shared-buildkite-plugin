@@ -41,9 +41,9 @@ if [[ -z "${BUILDKITE_BUILD_NUMBER:-}" ]]; then
 fi
 
 buildkite_api_get() {
-  local endpoint="$1"
+  local path="$1"
   curl -sS -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
-    "https://api.buildkite.com/v2/organizations/$ORG/pipelines/$BUILDKITE_PIPELINE_SLUG/$endpoint"
+    "https://api.buildkite.com/v2/organizations/$ORG/pipelines/$BUILDKITE_PIPELINE_SLUG/$path"
 }
 
 latest_passed_build_id() {
