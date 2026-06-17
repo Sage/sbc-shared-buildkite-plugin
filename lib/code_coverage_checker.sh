@@ -178,5 +178,5 @@ if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { 
 fi
 
 echo "OK: PR coverage is >= ${BASE_BRANCH} baseline."
-annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) is
-                                 greater than or equal to ${BASE_BRANCH} baseline (${baseline_coverage}%)."
+annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) meets or exceeds
+                                  ${BASE_BRANCH} baseline (${baseline_coverage}%)."
