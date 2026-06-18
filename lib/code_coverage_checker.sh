@@ -169,6 +169,13 @@ fi
 
 echo "Baseline coverage: ${baseline_coverage}%"
 echo "Current coverage: ${current_coverage}%"
+echo "Coverage threshold: ${COVERAGE}%"
+
+# if COVERAGE is set, use it as the threshold instead of the baseline coverage
+if [[ -n "${COVERAGE:-}" ]]; then
+  echo "Using COVERAGE threshold: ${COVERAGE}%"
+  baseline_coverage="$COVERAGE"
+fi
 
 if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { exit !(current + 0 < baseline + 0) }'; then
   echo "FAIL: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
