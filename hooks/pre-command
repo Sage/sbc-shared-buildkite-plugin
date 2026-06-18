@@ -22,9 +22,20 @@ if [[ -z $ACCOUNT_ID ]]; then
   unset ACCOUNT_ID
 fi
 
-export COVERAGE="${BUILDKITE_PLUGIN_SBC_SHARED_COVERAGE:-${BASELINE_COVERAGE_PERCENTAGE:-}}"
 if [[ -z $COVERAGE ]]; then
   unset COVERAGE
+fi
+
+if [[ -z $GITHUB_REPOSITORY ]]; then
+  unset GITHUB_REPOSITORY
+fi
+
+if [[ -z $GITHUB_SHA ]]; then
+  unset GITHUB_SHA
+fi
+
+if [[ -z $GITHUB_TOKEN ]]; then
+  unset GITHUB_TOKEN
 fi
 
 export GEM_HOST="${BUILDKITE_PLUGIN_SBC_SHARED_GEM_HOST}"
