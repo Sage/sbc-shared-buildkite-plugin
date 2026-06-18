@@ -172,7 +172,7 @@ push_image () {
 
 compare_coverage_metrics() {
   switches "$@"
-  validate_switches coverage
+  validate_switches coverage github_repository github_sha github_token
   # varx BASE_BRANCH BUILDKITE_BUILD_NUMBER
   . "$(dirname $BASH_SOURCE)/../lib/code_coverage_checker.sh"
 }
