@@ -26,7 +26,7 @@ configuration:
     extra_suffix:
       type: string
     coverage:
-      type: string
+      type: float
     github_token:
       type: string
     github_repository:
