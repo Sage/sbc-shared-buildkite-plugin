@@ -57,6 +57,6 @@ elif [[ $ACTION == "build" ]]; then
 elif [[ $ACTION == "coverage_metrics" ]]; then
   compare_coverage_metrics --coverage "${COVERAGE:-}" --github_repository "${GITHUB_REPOSITORY:-}" --github_sha "${GITHUB_SHA:-}" --github_token "${GITHUB_TOKEN:-}"
 else
-  echo "Unsupport action name of $ACTI
+  echo "Unsupport action name of $ACTION"
   exit 1
 fi
