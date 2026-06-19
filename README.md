@@ -64,7 +64,7 @@ Environment variables to customize behavior:
         account-ids: '522104923602'
         region: 'eu-west-1'
         assume_role:
-        role_arn: 'arn:aws:iam::522104923602:role/CI.Integration'
+          role_arn: 'arn:aws:iam::522104923602:role/CI.Integration'
     - ssh://git@github.com/Sage/sbc-shared-buildkite-plugin.git#2.9.0:
         action: coverage_metrics
 ```

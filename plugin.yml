@@ -25,6 +25,14 @@ configuration:
       type: boolean
     extra_suffix:
       type: string
+    coverage:
+      type: float
+    github_token:
+      type: string
+    github_repository:
+      type: string
+    github_sha:
+      type: string
   required:
     - action
   additionalProperties: false
