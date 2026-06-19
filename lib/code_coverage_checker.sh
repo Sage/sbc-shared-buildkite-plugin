@@ -169,9 +169,6 @@ fi
 
 echo "Baseline coverage: ${baseline_coverage}%"
 echo "Current coverage: ${current_coverage}%"
-echo "Coverage threshold: ${COVERAGE}%"
-echo "Repository: ${GITHUB_REPOSITORY:-}"
-echo "Commit SHA: ${GITHUB_SHA:-}"
 
 # if COVERAGE is set, use it as the threshold instead of the baseline coverage
 if [[ -n "${COVERAGE:-}" ]]; then
@@ -196,4 +193,7 @@ echo "OK: PR coverage is >= ${BASE_BRANCH} baseline."
 annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) meets or exceeds
                                   ${BASE_BRANCH} baseline (${baseline_coverage}%)."
 
+echo "Coverage threshold override: ${COVERAGE:-}"
+echo "Repository: ${GITHUB_REPOSITORY:-}"
+echo "Commit SHA: ${GITHUB_SHA:-}"
 
