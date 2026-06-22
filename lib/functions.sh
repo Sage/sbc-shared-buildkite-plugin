@@ -169,3 +169,9 @@ push_image () {
     docker manifest push $TARGET_ECR
   fi
 }
+
+compare_coverage_metrics() {
+  switches "$@"
+  validate_switches coverage github_repository github_sha github_token
+  . "$(dirname $BASH_SOURCE)/../lib/code_coverage_checker.sh"
+}

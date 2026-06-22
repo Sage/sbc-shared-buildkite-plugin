@@ -170,13 +170,17 @@ fi
 echo "Baseline coverage: ${baseline_coverage}%"
 echo "Current coverage: ${current_coverage}%"
 
-if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { exit !(current + 0 < baseline + 0) }'; then
-  echo "FAIL: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
-  annotate_coverage_gate "error" "Coverage check regression: PR coverage (${current_coverage}%) is
-                                  below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
-  exit 1
+# if COVERAGE is set, use it as the threshold instead of the baseline coverage
+if [[ -n "${COVERAGE:-}" ]]; then
+  echo "Using COVERAGE threshold: ${COVERAGE}%"
+  baseline_coverage="$COVERAGE"
 fi
 
+if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { exit !(current + 0 < baseline + 0) }'; then
+  echo "FAIL: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
+  message="Coverage check regression: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
+  annotate_coverage_gate "error" "$message"
+
 echo "OK: PR coverage is >= ${BASE_BRANCH} baseline."
-annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) is
-                                 greater than or equal to ${BASE_BRANCH} baseline (${baseline_coverage}%)."
+annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) meets or exceeds
+                                  ${BASE_BRANCH} baseline (${baseline_coverage}%)."
