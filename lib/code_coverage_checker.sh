@@ -180,6 +180,8 @@ if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { 
   echo "FAIL: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
   message="Coverage check regression: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
   annotate_coverage_gate "error" "$message"
+  exit 1
+fi
 
 echo "OK: PR coverage is >= ${BASE_BRANCH} baseline."
 annotate_coverage_gate "success" "Coverage check regression passed: PR coverage (${current_coverage}%) meets or exceeds
