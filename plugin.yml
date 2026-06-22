@@ -26,7 +26,7 @@ configuration:
     extra_suffix:
       type: string
     coverage:
-      type: float
+      type: number
   required:
     - action
   additionalProperties: false
