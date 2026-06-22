@@ -32,6 +32,11 @@ if [[ -n $BUILDKITE_PLUGIN_SBC_SHARED_REGION ]]; then
   export S1_REGION="${BUILDKITE_PLUGIN_SBC_SHARED_REGION}"
 fi
 
+export COVERAGE="${BUILDKITE_PLUGIN_SBC_SHARED_COVERAGE:-${COVERAGE:-}}"
+if [[ -z $COVERAGE ]]; then
+  unset COVERAGE
+fi
+
 # If the target image needs to have a custom tag other than the GH tag/branch
 export TARGET_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TARGET_TAG:-}"
 

@@ -25,6 +25,8 @@ configuration:
       type: boolean
     extra_suffix:
       type: string
+    coverage:
+      type: number
   required:
     - action
   additionalProperties: false

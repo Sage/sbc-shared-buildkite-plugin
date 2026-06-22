@@ -169,3 +169,14 @@ push_image () {
     docker manifest push $TARGET_ECR
   fi
 }
+
+compare_coverage_metrics() {
+  switches "$@"
+
+  # Optional override: if --coverage was provided, propagate to the env var expected by code_coverage_checker.sh.
+  if [[ -n "${coverage:-}" ]]; then
+    export COVERAGE="$coverage"
+  fi
+
+  . "$(dirname "$BASH_SOURCE")/code_coverage_checker.sh"
+}
