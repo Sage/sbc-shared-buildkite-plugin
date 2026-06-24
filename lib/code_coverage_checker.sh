@@ -30,7 +30,7 @@ post_coverage_regression_comment() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-  GITHUB_ACTION='create_commit_comment' COMMENT_MESSAGE="$message" ruby "$script_dir/github_api_workflow.rb" >/dev/null 2>&1 || true
+  GITHUB_ACTION='create_commit_comment' COMMENT_MESSAGE="$message" ruby "$script_dir/github_api_workflow.rb" >/dev/null 2>&1
 }
 
 if [[ -z "${BUILDKITE_API_TOKEN:-}" ]]; then
