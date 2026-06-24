@@ -25,6 +25,14 @@ annotate_coverage_gate() {
   fi
 }
 
+post_coverage_regression_comment() {
+  local message="$1"
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+  GITHUB_ACTION='create_commit_comment' COMMENT_MESSAGE="$message" ruby "$script_dir/github_api_workflow.rb" >/dev/null 2>&1 || true
+}
+
 if [[ -z "${BUILDKITE_API_TOKEN:-}" ]]; then
   echo "BUILDKITE_API_TOKEN is not set in this step environment." >&2
   exit 1
@@ -180,6 +188,7 @@ if awk -v current="$current_coverage" -v baseline="$baseline_coverage" 'BEGIN { 
   echo "FAIL: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
   message="Coverage check regression: PR coverage (${current_coverage}%) is below ${BASE_BRANCH} baseline (${baseline_coverage}%)."
   annotate_coverage_gate "error" "$message"
+  post_coverage_regression_comment "$message"
   exit 1
 fi
 

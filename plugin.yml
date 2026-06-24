@@ -7,6 +7,18 @@ configuration:
   properties:
     action:
       type: string
+    github_app_id:
+      type: string
+    github_app_client_id:
+      type: string
+    github_app_private_key:
+      type: string
+    github_repository:
+      type: string
+    github_sha:
+      type: string
+    github_token:
+      type: string
     environment:
       type: string
     landscape:

@@ -37,6 +37,12 @@ if [[ -z $COVERAGE ]]; then
   unset COVERAGE
 fi
 
+export GITHUB_APP_ID="${GITHUB_APP_ID:-}"
+export GITHUB_APP_CLIENT_ID="${GITHUB_APP_CLIENT_ID:-}"
+export GITHUB_APP_PRIVATE_KEY="${GITHUB_APP_PRIVATE_KEY:-}"
+export GITHUB_REPOSITORY="${BUILDKITE_PIPELINE_NAME:-}"
+export GITHUB_SHA="${BUILDKITE_COMMIT:-}"
+
 # If the target image needs to have a custom tag other than the GH tag/branch
 export TARGET_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TARGET_TAG:-}"
 
