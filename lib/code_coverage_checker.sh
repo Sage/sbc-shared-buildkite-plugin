@@ -29,7 +29,7 @@ post_coverage_regression_comment() {
   local message="$1"
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
+  echo "Github APP ID: $S1_DEPLOYMENT_APP_ID"
   GITHUB_ACTION='create_commit_comment' COMMENT_MESSAGE="$message" ruby "$script_dir/github_api_workflow.rb" >/dev/null 2>&1
 }
 
