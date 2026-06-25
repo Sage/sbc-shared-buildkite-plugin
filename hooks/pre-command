@@ -38,11 +38,29 @@ if [[ -z $COVERAGE ]]; then
 fi
 
 export GITHUB_APP_ID="${S1_DEPLOYMENT_APP_ID:-}"
-export GITHUB_APP_CLIENT_ID="${S1_DEPLOYMENT_APP_CLIENT_ID:-}"
-export GITHUB_APP_PRIVATE_KEY="${S1_DEPLOYMENT_PRIVATE_PEM:-}"
-export GITHUB_REPOSITORY="${BUILDKITE_PIPELINE_NAME:-}"
-export GITHUB_SHA="${BUILDKITE_COMMIT:-}"
+if [[ -z $GITHUB_APP_ID ]]; then
+  unset GITHUB_APP_ID
+fi
 
+export GITHUB_APP_CLIENT_ID="${S1_DEPLOYMENT_APP_CLIENT_ID:-}"
+if [[ -z $GITHUB_APP_CLIENT_ID ]]; then
+  unset GITHUB_APP_CLIENT_ID
+fi
+
+export GITHUB_APP_PRIVATE_KEY="${S1_DEPLOYMENT_PRIVATE_PEM:-}"
+if [[ -z $GITHUB_APP_PRIVATE_KEY ]]; then
+  unset GITHUB_APP_PRIVATE_KEY
+fi
+
+export GITHUB_REPOSITORY="${BUILDKITE_PIPELINE_NAME:-}"
+if [[ -z $GITHUB_REPOSITORY ]]; then
+  unset GITHUB_REPOSITORY
+fi
+
+export GITHUB_SHA="${BUILDKITE_COMMIT:-}"
+if [[ -z $GITHUB_SHA ]]; then
+  unset GITHUB_SHA
+fi
 # If the target image needs to have a custom tag other than the GH tag/branch
 export TARGET_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TARGET_TAG:-}"
 
