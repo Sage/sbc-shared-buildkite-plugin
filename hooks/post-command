@@ -57,6 +57,6 @@ elif [[ $ACTION == "build" ]]; then
 elif [[ $ACTION == "coverage_metrics" ]]; then
    compare_coverage_metrics --coverage "${COVERAGE:-}"
 else
-  echo "Unsupport action name of $ACTION"
+  echo "Unsupported action name of $ACTION"
   exit 1
 fi

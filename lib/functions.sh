@@ -48,12 +48,11 @@ setup() {
 # convert --<switch> to a variable
 switches() {
   while [ $# -gt 0 ]; do
-   if [[ $1 == *"--"* ]]; then
-        v="${1/--/}"
-        export $v="$2"
-   fi
-
-  shift
+    if [[ $1 == "--"* ]]; then
+      v="${1/--/}"
+      export $v="$2"
+    fi
+    shift
   done
 }
 
