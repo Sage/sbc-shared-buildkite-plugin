@@ -68,3 +68,15 @@ Environment variables to customize behavior:
     - ssh://git@github.com/Sage/sbc-shared-buildkite-plugin.git#2.9.0:
         action: coverage_metrics
 ```
+## Testing
+
+To run the test suite:
+
+```
+docker compose run --rm tests
+```
+
+Or to do it with debugging enabled, use:
+```
+docker compose run --rm tests bats --print-output-on-failure tests
+```
