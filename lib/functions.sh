@@ -73,16 +73,19 @@ validate_switches() {
   set -u
 }
 
-# target => (Optional) set the target build stage to build
-# tag => variant of the docker image e.g. app or database
-# file => source Dockerfile
+# target   => (Optional) set the target build stage to build
+# tag      => variant of the docker image e.g. app or database
+# file     => source Dockerfile
 # cache_id => typically the git branch name
+# push     => (Optional) "true" to push to the registry WITH attestations
+#             (provenance + SBOM). When unset we --load into the local daemon
+#             (used for the test image), which cannot carry attestations.
 buildx() {
   target=
+  push=
   switches "$@"
   validate_switches tag file cache_id
-  varx REPO BUILDKITE_PIPELINE_DEFAULT_BRANCH
-
+  varx REPO BUILDKITE_PIPELINE_DEFAULT_BRANCH BUILDKITE_BUILD_NUMBER
   echo "+++ :building_construction: Build $tag"
 
   local OPTIONAL_TARGET=
@@ -90,8 +93,27 @@ buildx() {
     OPTIONAL_TARGET="--target $target"
   fi
 
+  # Output + attestation strategy.
+  #
+  # --load routes through the classic docker image store, which cannot hold
+  # attestations (BuildKit silently drops them). So attestations only make
+  # sense on the --push path. For images we ship (and scan with Docker Scout)
+  # we push WITH:
+  #   --provenance=mode=max  records the full build graph + layer->step mapping
+  #                          so Scout can identify the DHI base image and split
+  #                          base-image CVEs from our app-layer CVEs.
+  #   --sbom=true            emits an SBOM attestation: exact package inventory
+  #                          and lets DHI's VEX / "not-affected" data apply.
+  local OUTPUT_ARGS=(--load)
+  if [[ $push == "true" ]]; then
+    OUTPUT_ARGS=(--push --provenance=mode=max --sbom=true)
+  fi
+
+  local BUILD_IMAGE_NAME=$BK_ECR:$APP-$tag-build-$BUILDKITE_BUILD_NUMBER
+
   docker buildx build \
     --file $file \
+    --pull \
     --build-arg CI_BRANCH \
     --build-arg CI_STRING_TIME \
     --build-arg CI_COMMIT \
@@ -105,8 +127,8 @@ buildx() {
     --secret id=jfrog_nuget,env=NUGET_JFROG_PASSWORD \
     --ssh default \
     $OPTIONAL_TARGET \
-    --load \
-    --tag $REPO:$tag \
+    "${OUTPUT_ARGS[@]}" \
+    --tag $BUILD_IMAGE_NAME \
     .
 }
 
@@ -118,7 +140,7 @@ pushx () {
 
   echo "--- :floppy_disk: Push $tag"
   local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
-  docker tag $REPO:$tag $BUILD_IMAGE_NAME
+  # docker tag $REPO:$tag $BUILD_IMAGE_NAME
   docker push $BUILD_IMAGE_NAME
 }
 
