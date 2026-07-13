@@ -111,6 +111,8 @@ buildx() {
 
   local BUILD_IMAGE_NAME=$BK_ECR:$APP-$tag-build-$BUILDKITE_BUILD_NUMBER
 
+  echo "--- :docker: Building $tag as $BUILD_IMAGE_NAME with build args: $OPTIONAL_TARGET ${OUTPUT_ARGS[@]}"
+
   docker buildx build \
     --file $file \
     --pull \
@@ -138,9 +140,10 @@ pushx () {
   validate_switches app tag
   varx REPO BUILDKITE_BUILD_NUMBER
 
-  echo "--- :floppy_disk: Push $tag"
   local BUILD_IMAGE_NAME=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
-  # docker tag $REPO:$tag $BUILD_IMAGE_NAME
+
+  echo "--- :floppy_disk: Push $tag as $BUILD_IMAGE_NAME"
+
   docker push $BUILD_IMAGE_NAME
 }
 
@@ -174,6 +177,9 @@ push_image () {
 
   SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
   TARGET_IMAGE_X86_64=$TARGET_ECR$X86_64_TAG_SUFFIX
+
+  echo "Pushing $SOURCE_IMAGE_X86_64 to $TARGET_IMAGE_X86_64"
+
   docker pull $SOURCE_IMAGE_X86_64
   docker tag $SOURCE_IMAGE_X86_64 $TARGET_IMAGE_X86_64
   docker push $TARGET_IMAGE_X86_64
@@ -181,11 +187,15 @@ push_image () {
   if [[ "$multiarch" == "true" ]]; then
     SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
     TARGET_IMAGE_ARM64=$TARGET_ECR-arm64
+
+    echo "Pushing $SOURCE_IMAGE_ARM64 to $TARGET_IMAGE_ARM64"
+
     docker pull $SOURCE_IMAGE_ARM64
     docker tag $SOURCE_IMAGE_ARM64 $TARGET_IMAGE_ARM64
     docker push $TARGET_IMAGE_ARM64
 
-    # Create & push manifest file for multiarch image
+    echo "Creating and pushing manifest: $TARGET_ECR with $TARGET_IMAGE_X86_64 and $TARGET_IMAGE_ARM64"
+
     docker manifest create $TARGET_ECR $TARGET_IMAGE_X86_64 $TARGET_IMAGE_ARM64
     docker manifest push $TARGET_ECR
   fi
