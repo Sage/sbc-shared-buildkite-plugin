@@ -27,6 +27,9 @@ configuration:
       type: string
     coverage:
       type: number
+    coverage_tolerance:
+      type: number
+      minimum: 0
   required:
     - action
   additionalProperties: false
