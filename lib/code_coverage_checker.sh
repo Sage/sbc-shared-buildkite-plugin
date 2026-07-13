@@ -231,7 +231,7 @@ minimum_allowed_coverage="$(
         minimum = 0
       }
 
-      printf "%.4f", minimum
+      printf "%.2f", minimum
     }'
 )"
 
