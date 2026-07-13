@@ -30,3 +30,13 @@ teardown() {
 
   [[ -f .buildkite/release.sh ]]
 }
+
+@test "pre-command hook exports COVERAGE_TOLERANCE from plugin config" {
+  export BUILDKITE_PLUGIN_SBC_SHARED_ACTION="publish_gem"
+  export BUILDKITE_PLUGIN_SBC_SHARED_COVERAGE_TOLERANCE="1.25"
+
+  run bash -c 'source ./hooks/pre-command; echo "${COVERAGE_TOLERANCE:-}"'
+
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == *"1.25"* ]]
+}

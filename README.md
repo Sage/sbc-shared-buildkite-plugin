@@ -25,9 +25,11 @@ The coverage gate script performs the following steps:
    - Extracts the line coverage percentage from the PR.
 
 4. **Compares Coverage Metrics**
-   - Compares current PR coverage against baseline coverage.
-   - Fails (exit 1) if PR coverage is **below** baseline
-   - Passes (exit 0) if PR coverage is **equal to or above** baseline.
+   - Compares current PR coverage against a minimum allowed threshold.
+   - Computes threshold as: `baseline coverage - COVERAGE_TOLERANCE` (floored at 0).
+   - Fails (exit 1) if PR coverage is **below** the minimum allowed threshold.
+   - Passes (exit 0) if PR coverage is **equal to or above** the minimum allowed threshold.
+   - If `COVERAGE` is set, that value is used as baseline before tolerance is applied.
 
 5. **Annotates Buildkite**
    - Posts a success annotation if coverage passes.
@@ -44,6 +46,8 @@ Environment variables to customize behavior:
 | `BUILDKITE_PIPELINE_SLUG` | (from env) | Pipeline name; reads from `BUILDKITE_PIPELINE_SLUG` if set |
 | `BASE_BRANCH` | `master` | Baseline branch for coverage comparison |
 | `BUILDKITE_BUILD_NUMBER` | (from env) | Current build number (auto-set in CI) |
+| `COVERAGE` | (unset) | Optional baseline override for coverage threshold |
+| `COVERAGE_TOLERANCE` | `0.00` | Allowed reduction in coverage percentage points |
 | `BASELINE_COVERAGE_ARTIFACT` | `coverage/.last_run.json` | Path to baseline coverage artifact in Buildkite |
 | `CURRENT_COVERAGE_ARTIFACT` | `coverage/.last_run.json` | Path to current PR coverage artifact in Buildkite |
 | `BASELINE_ARTIFACTS_JSON` | `base_artifacts.json` | Local filename for baseline artifact list |

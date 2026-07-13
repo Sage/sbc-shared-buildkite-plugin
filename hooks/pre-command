@@ -37,6 +37,11 @@ if [[ -z $COVERAGE ]]; then
   unset COVERAGE
 fi
 
+export COVERAGE_TOLERANCE="${BUILDKITE_PLUGIN_SBC_SHARED_COVERAGE_TOLERANCE:-${COVERAGE_TOLERANCE:-}}"
+if [[ -z $COVERAGE_TOLERANCE ]]; then
+  unset COVERAGE_TOLERANCE
+fi
+
 # If the target image needs to have a custom tag other than the GH tag/branch
 export TARGET_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TARGET_TAG:-}"
 
