@@ -180,7 +180,7 @@ push_image () {
 
   echo "Pushing $SOURCE_IMAGE_X86_64 to $TARGET_IMAGE_X86_64"
 
-  docker pull $SOURCE_IMAGE_X86_64
+  docker pull $SOURCE_IMAGE_X86_64 --platform linux/amd64
   docker tag $SOURCE_IMAGE_X86_64 $TARGET_IMAGE_X86_64
   docker push $TARGET_IMAGE_X86_64
 
@@ -190,7 +190,7 @@ push_image () {
 
     echo "Pushing $SOURCE_IMAGE_ARM64 to $TARGET_IMAGE_ARM64"
 
-    docker pull $SOURCE_IMAGE_ARM64
+    docker pull $SOURCE_IMAGE_ARM64 --platform linux/arm64
     docker tag $SOURCE_IMAGE_ARM64 $TARGET_IMAGE_ARM64
     docker push $TARGET_IMAGE_ARM64
 
