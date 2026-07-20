@@ -49,7 +49,7 @@ set_up_push_image_env_vars() {
 @test "push_image action pulls, tags, and pushes the docker image" {
   set_up_push_image_env_vars
 
-  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pulling"
+  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 --platform linux/amd64 : echo pulling"
   stub docker "tag 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo tagging"
   stub docker "push 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo pushing"
 
@@ -57,9 +57,10 @@ set_up_push_image_env_vars() {
 
   [[ "${lines[0]}" == *"--- :floppy_disk: Push test image for myapp"* ]]
   [[ "${lines[1]}" == *"Pushing image for myapp using tag: mybranch"* ]]
-  [[ "${lines[2]}" == *"pulling"* ]]
-  [[ "${lines[3]}" == *"tagging"* ]]
-  [[ "${lines[4]}" == *"pushing"* ]]
+  [[ "${lines[2]}" == *"Pushing"* ]]
+  [[ "${lines[3]}" == *"pulling"* ]]
+  [[ "${lines[4]}" == *"tagging"* ]]
+  [[ "${lines[5]}" == *"pushing"* ]]
 
   unstub docker
 }
@@ -68,10 +69,10 @@ set_up_push_image_env_vars() {
   set_up_push_image_env_vars
   export ENVIRONMENT="qa"
 
-  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pulling app image"
+  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 --platform linux/amd64 : echo pulling app image"
   stub docker "tag 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo tagging"
   stub docker "push 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo pushing"
-  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 : echo pulling db image"
+  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 --platform linux/amd64 : echo pulling db image"
   stub docker "tag 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch : echo tagging db image"
   stub docker "push 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch : echo pushing db image"
 
