@@ -196,8 +196,7 @@ push_image () {
 
     echo "Creating and pushing manifest: $TARGET_ECR with $TARGET_IMAGE_X86_64 and $TARGET_IMAGE_ARM64"
 
-    docker manifest create $TARGET_ECR $TARGET_IMAGE_X86_64 $TARGET_IMAGE_ARM64
-    docker manifest push $TARGET_ECR
+    docker buildx imagetools create -t $TARGET_ECR $TARGET_IMAGE_X86_64 $TARGET_IMAGE_ARM64
   fi
 }
 
