@@ -116,8 +116,11 @@ buildx() {
 
   # When multiple platforms specified, build each separately with per-arch tags.
   # This ensures we have explicitly tagged per-arch images in BK_ECR for later copying.
+  # For platform-native builds (building on native agents), omit --platform to avoid
+  # buildx wrapping images in manifest indices. Just use native platform detection.
   if [[ -n "$platforms" && "$platforms" == *","* ]]; then
-    # Multi-platform: build each architecture separately with per-arch suffix
+    # Multi-platform per-arch builds: build each architecture separately with per-arch suffix
+    # Since we're on platform-native agents, buildx will auto-detect and create direct images.
     IFS=',' read -ra platform_array <<< "$platforms"
     for arch_platform in "${platform_array[@]}"; do
       arch_platform=$(echo "$arch_platform" | xargs)  # Trim whitespace
@@ -133,10 +136,11 @@ buildx() {
 
       echo "--- :docker: Building $tag for $arch_platform as $BUILD_IMAGE_NAME with build args: $OPTIONAL_TARGET ${OUTPUT_ARGS[@]}"
 
+      # For platform-native builds, omit --platform to avoid manifest index wrapping.
+      # Buildx will auto-detect the native platform and create direct images.
       docker buildx build \
         --file $file \
         --pull \
-        --platform $arch_platform \
         --build-arg CI_BRANCH \
         --build-arg CI_STRING_TIME \
         --build-arg CI_COMMIT \
