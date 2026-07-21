@@ -81,11 +81,13 @@ validate_switches() {
 #             (provenance + SBOM). When unset we --load into the local daemon
 #             (used for the test image), which cannot carry attestations.
 buildx() {
-  target=
-  push=
+  local target=
+  local push=
+
   switches "$@"
   validate_switches tag file cache_id
   varx REPO BUILDKITE_PIPELINE_DEFAULT_BRANCH BUILDKITE_BUILD_NUMBER
+
   echo "+++ :building_construction: Build $tag"
 
   local OPTIONAL_TARGET=
@@ -173,14 +175,14 @@ push_image () {
 
   echo "Creating and pushing manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64"
 
-  docker buildx imagetools create -t $TARGET_ECR $SOURCE_IMAGE_X86_64
+  docker buildx imagetools create --tag $TARGET_ECR $SOURCE_IMAGE_X86_64
 
   if [[ "$multiarch" == "true" ]]; then
     SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
 
     echo "Appending manifest: $TARGET_ECR with $SOURCE_IMAGE_ARM64"
 
-    docker buildx imagetools create --append -t $TARGET_ECR $SOURCE_IMAGE_ARM64
+    docker buildx imagetools create --append --tag $TARGET_ECR $SOURCE_IMAGE_ARM64
   fi
 }
 
