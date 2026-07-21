@@ -73,16 +73,19 @@ validate_switches() {
   set -u
 }
 
-# target   => (Optional) set the target build stage to build
-# tag      => variant of the docker image e.g. app or database
-# file     => source Dockerfile
-# cache_id => typically the git branch name
-# push     => (Optional) "true" to push to the registry WITH attestations
-#             (provenance + SBOM). When unset we --load into the local daemon
-#             (used for the test image), which cannot carry attestations.
+# target    => (Optional) set the target build stage to build
+# tag       => variant of the docker image e.g. app or database
+# file      => source Dockerfile
+# cache_id  => typically the git branch name
+# platforms => (Optional) comma-separated platforms e.g. "linux/amd64,linux/arm64"
+#              When specified, builds each platform separately with per-arch tags (-amd64, -arm64)
+# push      => (Optional) "true" to push to the registry WITH attestations
+#              (provenance + SBOM). When unset we --load into the local daemon
+#              (used for the test image), which cannot carry attestations.
 buildx() {
   local target=
   local push=
+  local platforms=
 
   switches "$@"
   validate_switches tag file cache_id
@@ -111,29 +114,78 @@ buildx() {
     OUTPUT_ARGS=(--push --provenance=mode=max --sbom=true)
   fi
 
-  local BUILD_IMAGE_NAME=$BK_ECR:$APP-$tag-build-$BUILDKITE_BUILD_NUMBER
+  # When multiple platforms specified, build each separately with per-arch tags.
+  # This ensures we have explicitly tagged per-arch images in BK_ECR for later copying.
+  if [[ -n "$platforms" && "$platforms" == *","* ]]; then
+    # Multi-platform: build each architecture separately with per-arch suffix
+    IFS=',' read -ra platform_array <<< "$platforms"
+    for arch_platform in "${platform_array[@]}"; do
+      arch_platform=$(echo "$arch_platform" | xargs)  # Trim whitespace
 
-  echo "--- :docker: Building $tag as $BUILD_IMAGE_NAME with build args: $OPTIONAL_TARGET ${OUTPUT_ARGS[@]}"
+      local arch_suffix=""
+      case "$arch_platform" in
+        linux/amd64) arch_suffix="-amd64" ;;
+        linux/arm64) arch_suffix="-arm64" ;;
+        *) arch_suffix="-${arch_platform##*/}" ;;
+      esac
 
-  docker buildx build \
-    --file $file \
-    --pull \
-    --build-arg CI_BRANCH \
-    --build-arg CI_STRING_TIME \
-    --build-arg CI_COMMIT \
-    --build-arg CACHEBUST=$(date +%Y-%m-%d) \
-    --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
-    --cache-from $BK_CACHE:$APP-$tag-$cache_id \
-    --cache-from $BK_CACHE:$APP-$tag-$BUILDKITE_PIPELINE_DEFAULT_BRANCH \
-    --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
-    --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
-    --secret id=jfrog_npm,env=SAGEONEGEMS_JFROG_NPM_TOKEN \
-    --secret id=jfrog_nuget,env=NUGET_JFROG_PASSWORD \
-    --ssh default \
-    $OPTIONAL_TARGET \
-    "${OUTPUT_ARGS[@]}" \
-    --tag $BUILD_IMAGE_NAME \
-    .
+      local BUILD_IMAGE_NAME=$BK_ECR:$APP-$tag-build-$BUILDKITE_BUILD_NUMBER$arch_suffix
+
+      echo "--- :docker: Building $tag for $arch_platform as $BUILD_IMAGE_NAME with build args: $OPTIONAL_TARGET ${OUTPUT_ARGS[@]}"
+
+      docker buildx build \
+        --file $file \
+        --pull \
+        --platform $arch_platform \
+        --build-arg CI_BRANCH \
+        --build-arg CI_STRING_TIME \
+        --build-arg CI_COMMIT \
+        --build-arg CACHEBUST=$(date +%Y-%m-%d) \
+        --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
+        --cache-from $BK_CACHE:$APP-$tag-$cache_id \
+        --cache-from $BK_CACHE:$APP-$tag-$BUILDKITE_PIPELINE_DEFAULT_BRANCH \
+        --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
+        --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
+        --secret id=jfrog_npm,env=SAGEONEGEMS_JFROG_NPM_TOKEN \
+        --secret id=jfrog_nuget,env=NUGET_JFROG_PASSWORD \
+        --ssh default \
+        $OPTIONAL_TARGET \
+        "${OUTPUT_ARGS[@]}" \
+        --tag $BUILD_IMAGE_NAME \
+        .
+    done
+  else
+    # Single platform or no platform specified: build normally
+    local BUILD_IMAGE_NAME=$BK_ECR:$APP-$tag-build-$BUILDKITE_BUILD_NUMBER
+
+    local OPTIONAL_PLATFORM=""
+    if [[ -n "$platforms" ]]; then
+      OPTIONAL_PLATFORM="--platform $platforms"
+    fi
+
+    echo "--- :docker: Building $tag as $BUILD_IMAGE_NAME with build args: $OPTIONAL_TARGET ${OUTPUT_ARGS[@]}"
+
+    docker buildx build \
+      --file $file \
+      --pull \
+      $OPTIONAL_PLATFORM \
+      --build-arg CI_BRANCH \
+      --build-arg CI_STRING_TIME \
+      --build-arg CI_COMMIT \
+      --build-arg CACHEBUST=$(date +%Y-%m-%d) \
+      --cache-to mode=max,image-manifest=true,oci-mediatypes=true,type=registry,ref=$BK_CACHE:$APP-$tag-$cache_id \
+      --cache-from $BK_CACHE:$APP-$tag-$cache_id \
+      --cache-from $BK_CACHE:$APP-$tag-$BUILDKITE_PIPELINE_DEFAULT_BRANCH \
+      --secret id=railslts,env=BUNDLE_GEMS__RAILSLTS__COM \
+      --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
+      --secret id=jfrog_npm,env=SAGEONEGEMS_JFROG_NPM_TOKEN \
+      --secret id=jfrog_nuget,env=NUGET_JFROG_PASSWORD \
+      --ssh default \
+      $OPTIONAL_TARGET \
+      "${OUTPUT_ARGS[@]}" \
+      --tag $BUILD_IMAGE_NAME \
+      .
+  fi
 }
 
 # Push an image into the BK ECR
@@ -147,6 +199,70 @@ pushx () {
   echo "--- :floppy_disk: Push $tag as $BUILD_IMAGE_NAME"
 
   docker push $BUILD_IMAGE_NAME
+}
+
+# Copy an image between registries while preserving referrers (provenance, SBOM, signatures).
+copy_image_with_referrers() {
+  local source_image=$1
+  local target_image=$2
+  local oras_image=ghcr.io/oras-project/oras:v1.3.3
+  local docker_config_dir=${DOCKER_CONFIG:-${HOME}/.docker}
+
+  if ! command -v docker > /dev/null 2>&1; then
+    echo "docker is required to run containerized oras copy."
+    exit 1
+  fi
+
+  echo "Copying image and referrers: $source_image -> $target_image"
+
+  # Use dockerized ORAS for recursive copying with referrer support (cosign copy is deprecated).
+  # oras cp -r copies images and all OCI referrers (signatures, attestations, SBOM, provenance).
+  # ECR referrers API flags ensure compatibility with AWS ECR.
+  docker run --rm \
+    -v "$docker_config_dir:/root/.docker:ro" \
+    -e AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY \
+    -e AWS_SESSION_TOKEN \
+    -e AWS_REGION \
+    -e AWS_DEFAULT_REGION \
+    -e AWS_PROFILE \
+    "$oras_image" \
+    cp -r \
+    --from-distribution-spec v1.1-referrers-api \
+    --to-distribution-spec v1.1-referrers-api \
+    "$source_image" "$target_image"
+}
+
+# Create an OCI-compliant manifest index from tagged per-arch images.
+# Uses containerized ORAS for consistency and ECR referrers API support.
+oras_manifest_index_create() {
+  local index_tag=$1
+  shift  # Remove first arg
+  local arch_images=("$@")  # Remaining args are arch-specific image refs
+
+  local oras_image=ghcr.io/oras-project/oras:v1.3.3
+  local docker_config_dir=${DOCKER_CONFIG:-${HOME}/.docker}
+
+  if ! command -v docker > /dev/null 2>&1; then
+    echo "docker is required to run containerized oras manifest index create."
+    exit 1
+  fi
+
+  echo "Creating manifest index: $index_tag from ${arch_images[*]}"
+
+  # Use dockerized ORAS for OCI-compliant manifest index creation.
+  # This preserves per-arch referrers (attestations) better than docker buildx imagetools.
+  # Note: ORAS syntax is "manifest index create <repo>:<tag> <ref1> <ref2>" (no -t flag)
+  docker run --rm \
+    -v "$docker_config_dir:/root/.docker:ro" \
+    -e AWS_ACCESS_KEY_ID \
+    -e AWS_SECRET_ACCESS_KEY \
+    -e AWS_SESSION_TOKEN \
+    -e AWS_REGION \
+    -e AWS_DEFAULT_REGION \
+    -e AWS_PROFILE \
+    "$oras_image" \
+    manifest index create "$index_tag" "${arch_images[@]}"
 }
 
 # Push an image into a target ECR for deployment
@@ -169,21 +285,25 @@ push_image () {
 
   echo "Pushing image for $app using tag: $target_tag"
 
-  TARGET_ECR=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:$target_tag
+  local target_ecr=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:$target_tag
+  local target_image_x86_64=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:${target_tag}-x86_64
+  local target_image_arm64=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:${target_tag}-arm64
 
-  SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
+  local source_image_x86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
+  local source_image_arm64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
 
-  echo "Creating and pushing manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64"
-
-  docker buildx imagetools create --tag $TARGET_ECR $SOURCE_IMAGE_X86_64
+  copy_image_with_referrers "$source_image_x86_64" "$target_image_x86_64"
 
   if [[ "$multiarch" == "true" ]]; then
-    SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
+    copy_image_with_referrers "$source_image_arm64" "$target_image_arm64"
 
-    echo "Appending manifest: $TARGET_ECR with $SOURCE_IMAGE_ARM64"
-
-    docker buildx imagetools create --append --tag $TARGET_ECR $SOURCE_IMAGE_ARM64
+    echo "Creating and pushing manifest: $target_ecr with $target_image_x86_64 and $target_image_arm64"
+    oras_manifest_index_create "$target_ecr" "$target_image_x86_64" "$target_image_arm64"
+    return
   fi
+
+  echo "Creating and pushing manifest: $target_ecr with $target_image_x86_64"
+  oras_manifest_index_create "$target_ecr" "$target_image_x86_64"
 }
 
 compare_coverage_metrics() {

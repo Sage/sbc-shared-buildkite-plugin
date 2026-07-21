@@ -80,3 +80,44 @@ Or to do it with debugging enabled, use:
 ```
 docker compose run --rm tests bats --print-output-on-failure tests
 ```
+
+## Build and Push Strategy (Option C: Separate Image and Attestation Distribution)
+
+### Build Phase (`buildx()`)
+When building multi-platform images, the plugin creates separate tagged images for each architecture in BK_ECR:
+- Accepts `--platforms linux/amd64,linux/arm64` parameter
+- Builds each architecture separately with per-arch suffixes:
+  - `BK_ECR:app-tag-build-123-amd64`
+  - `BK_ECR:app-tag-build-123-arm64`
+- Each build includes full attestations: `--provenance=mode=max --sbom=true`
+- This avoids the manifest index intermediate artifact issue and ensures clean, tagged images
+
+### Push Phase (`push_image()`)
+The push flow distributes images and attestations in two coordinated steps:
+
+1. **Copy per-arch images with referrers to target ECR** (via `oras cp -r`):
+   - `BK_ECR:app-tag-build-123-amd64` → `TARGET_ECR:tag-x86_64` (with attestations)
+   - `BK_ECR:app-tag-build-123-arm64` → `TARGET_ECR:tag-arm64` (with attestations)
+   - ORAS copies image + all OCI referrers (signatures, SBOM, provenance, attestations)
+   - Each per-arch image retains its own attestations
+
+2. **Create OCI-compliant manifest index** (via `oras manifest index create`):
+   - Composes final deployment manifest: `TARGET_ECR:tag` → points to arch-specific images
+   - ORAS-based manifest creation preserves per-arch attestation metadata better than `docker buildx imagetools`
+
+### Why This Approach Works
+- **No untagged artifacts**: Per-arch images are explicitly tagged in BK_ECR → copied with tags → cleanup scripts won't remove them
+- **Attestations preserved**: Each per-arch image carries its own build provenance, SBOM, and signatures through the copy
+- **OCI-compliant**: Follows OCI Distribution Spec v1.1 for decoupled image and attestation distribution
+- **ECR compatible**: Uses referrers API (`--from-distribution-spec v1.1-referrers-api`) for AWS ECR support
+
+### Dependencies
+- **Docker**: Required for buildx and containerized ORAS calls
+- **ORAS v1.3.3**: Containerized as `ghcr.io/oras-project/oras:v1.3.3`
+  - Replaces deprecated `cosign copy` command (deprecated Feb 2025, removed in Cosign v4)
+  - Used for: per-arch image copying (`cp -r`) and manifest index creation (`manifest index create`)
+
+### Credential Handling
+- Mounts host Docker config directory (read-only) into ORAS containers
+- Passes AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_REGION, AWS_PROFILE) as environment variables
+- Enables registry login reuse from earlier pipeline steps (ECR authentication, etc.)
