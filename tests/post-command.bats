@@ -49,18 +49,14 @@ set_up_push_image_env_vars() {
 @test "push_image action pulls, tags, and pushes the docker image" {
   set_up_push_image_env_vars
 
-  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 --platform linux/amd64 : echo pulling"
-  stub docker "tag 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo tagging"
-  stub docker "push 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo pushing"
+  stub docker "buildx imagetools create -t 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
 
   run -0 ./hooks/post-command
 
   [[ "${lines[0]}" == *"--- :floppy_disk: Push test image for myapp"* ]]
   [[ "${lines[1]}" == *"Pushing image for myapp using tag: mybranch"* ]]
-  [[ "${lines[2]}" == *"Pushing"* ]]
-  [[ "${lines[3]}" == *"pulling"* ]]
-  [[ "${lines[4]}" == *"tagging"* ]]
-  [[ "${lines[5]}" == *"pushing"* ]]
+  [[ "${lines[2]}" == *"Creating and pushing manifest: 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch with 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123"* ]]
+  [[ "${lines[3]}" == *"pushing manifest"* ]]
 
   unstub docker
 }
@@ -69,14 +65,14 @@ set_up_push_image_env_vars() {
   set_up_push_image_env_vars
   export ENVIRONMENT="qa"
 
-  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 --platform linux/amd64 : echo pulling app image"
-  stub docker "tag 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo tagging"
-  stub docker "push 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo pushing"
-  stub docker "pull 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 --platform linux/amd64 : echo pulling db image"
-  stub docker "tag 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch : echo tagging db image"
-  stub docker "push 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch : echo pushing db image"
+  stub docker "buildx imagetools create -t 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing app manifest"
+  stub docker "buildx imagetools create -t 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 : echo pushing db manifest"
 
   run -0 ./hooks/post-command
+
+  [[ "$output" == *"pushing app manifest"* ]]
+  [[ "$output" == *"DB image"* ]]
+  [[ "$output" == *"pushing db manifest"* ]]
 
   unstub docker
 }

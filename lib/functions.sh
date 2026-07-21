@@ -167,36 +167,20 @@ push_image () {
 
   echo "Pushing image for $app using tag: $target_tag"
 
-  local X86_64_TAG_SUFFIX=""
-
-  if [[ "$multiarch" == "true" ]]; then
-    X86_64_TAG_SUFFIX=-x86_64
-  fi
-
   TARGET_ECR=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:$target_tag
 
   SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
-  TARGET_IMAGE_X86_64=$TARGET_ECR$X86_64_TAG_SUFFIX
 
-  echo "Pushing $SOURCE_IMAGE_X86_64 to $TARGET_IMAGE_X86_64"
+  echo "Creating and pushing manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64"
 
-  docker pull $SOURCE_IMAGE_X86_64 --platform linux/amd64
-  docker tag $SOURCE_IMAGE_X86_64 $TARGET_IMAGE_X86_64
-  docker push $TARGET_IMAGE_X86_64
+  docker buildx imagetools create -t $TARGET_ECR $SOURCE_IMAGE_X86_64
 
   if [[ "$multiarch" == "true" ]]; then
     SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
-    TARGET_IMAGE_ARM64=$TARGET_ECR-arm64
 
-    echo "Pushing $SOURCE_IMAGE_ARM64 to $TARGET_IMAGE_ARM64"
+    echo "Appending manifest: $TARGET_ECR with $SOURCE_IMAGE_ARM64"
 
-    docker pull $SOURCE_IMAGE_ARM64 --platform linux/arm64
-    docker tag $SOURCE_IMAGE_ARM64 $TARGET_IMAGE_ARM64
-    docker push $TARGET_IMAGE_ARM64
-
-    echo "Creating and pushing manifest: $TARGET_ECR with $TARGET_IMAGE_X86_64 and $TARGET_IMAGE_ARM64"
-
-    docker buildx imagetools create -t $TARGET_ECR $TARGET_IMAGE_X86_64 $TARGET_IMAGE_ARM64
+    docker buildx imagetools create --append -t $TARGET_ECR $SOURCE_IMAGE_ARM64
   fi
 }
 
