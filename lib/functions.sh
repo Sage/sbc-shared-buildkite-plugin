@@ -173,16 +173,16 @@ push_image () {
 
   SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
 
-  echo "Creating and pushing manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64"
-
-  docker buildx imagetools create --tag $TARGET_ECR $SOURCE_IMAGE_X86_64
-
   if [[ "$multiarch" == "true" ]]; then
     SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
 
-    echo "Appending manifest: $TARGET_ECR with $SOURCE_IMAGE_ARM64"
+    echo "Creating multi-arch manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64 and $SOURCE_IMAGE_ARM64"
 
-    docker buildx imagetools create --append --tag $TARGET_ECR $SOURCE_IMAGE_ARM64
+    docker buildx imagetools create --tag $TARGET_ECR $SOURCE_IMAGE_X86_64 $SOURCE_IMAGE_ARM64
+  else
+    echo "Creating manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64"
+
+    docker buildx imagetools create --tag $TARGET_ECR $SOURCE_IMAGE_X86_64
   fi
 }
 
