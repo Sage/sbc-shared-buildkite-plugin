@@ -19,6 +19,14 @@ teardown() {
   [ -d .buildkite ] && rmdir .buildkite
 }
 
+set_up_push_param_fixture() {
+  TEST_PLUGIN_DIR="$BATS_TEST_TMPDIR/plugin"
+
+  mkdir -p "$TEST_PLUGIN_DIR/hooks" "$TEST_PLUGIN_DIR/lib" "$TEST_PLUGIN_DIR/configuration"
+  cp hooks/post-command "$TEST_PLUGIN_DIR/hooks/post-command"
+  cp lib/functions.sh "$TEST_PLUGIN_DIR/lib/functions.sh"
+}
+
 @test "complains if ACTION is not recognized" {
   export BUILDKITE_PLUGIN_SBC_SHARED_ACTION="not_a_real_action"
 
@@ -59,6 +67,54 @@ set_up_push_image_env_vars() {
   [[ "${lines[3]}" == *"pushing manifest"* ]]
 
   unstub docker
+}
+
+@test "push_param action runs the configuration pusher with the config path and S1 region" {
+  set_up_push_param_fixture
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'echo "working directory: $PWD"' \
+    'echo "config path: $1"' \
+    'echo "AWS region: $AWS_REGION"' \
+    > "$TEST_PLUGIN_DIR/configuration/push.sh"
+  chmod +x "$TEST_PLUGIN_DIR/configuration/push.sh"
+
+  export BUILDKITE_PLUGIN_SBC_SHARED_ACTION="push_param"
+  export ENVIRONMENT="test"
+  export LANDSCAPE="blue"
+  export S1_REGION="eu-west-2"
+
+  original_directory="$PWD"
+  cd "$TEST_PLUGIN_DIR"
+  run -0 ./hooks/post-command
+  cd "$original_directory"
+
+  [[ "${lines[0]}" == "working directory: $TEST_PLUGIN_DIR/configuration" ]]
+  [[ "${lines[1]}" == "config path: test/blue" ]]
+  [[ "${lines[2]}" == "AWS region: eu-west-2" ]]
+}
+
+@test "push_param action returns the configuration pusher's failure status" {
+  set_up_push_param_fixture
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'echo "configuration push failed"' \
+    'exit 23' \
+    > "$TEST_PLUGIN_DIR/configuration/push.sh"
+  chmod +x "$TEST_PLUGIN_DIR/configuration/push.sh"
+
+  export BUILDKITE_PLUGIN_SBC_SHARED_ACTION="push_param"
+  export ENVIRONMENT="production"
+  export LANDSCAPE="green"
+  export S1_REGION="eu-west-1"
+
+  original_directory="$PWD"
+  cd "$TEST_PLUGIN_DIR"
+  run ./hooks/post-command
+  cd "$original_directory"
+
+  [[ "$status" -eq 23 ]]
+  [[ "$output" == "configuration push failed" ]]
 }
 
 @test "push_image with multiarch=true creates single manifest with both images" {
