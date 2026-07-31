@@ -129,6 +129,7 @@ buildx() {
     --secret id=jfrog,env=BUNDLE_SAGEONEGEMS__JFROG__IO \
     --secret id=jfrog_npm,env=SAGEONEGEMS_JFROG_NPM_TOKEN \
     --secret id=jfrog_nuget,env=NUGET_JFROG_PASSWORD \
+    --secret id=contribsys,env=BUNDLE_GEMS__CONTRIBSYS__COM \
     --ssh default \
     $OPTIONAL_TARGET \
     "${OUTPUT_ARGS[@]}" \
