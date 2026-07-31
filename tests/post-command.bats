@@ -25,6 +25,8 @@ set_up_push_param_fixture() {
   mkdir -p "$TEST_PLUGIN_DIR/hooks" "$TEST_PLUGIN_DIR/lib" "$TEST_PLUGIN_DIR/configuration"
   cp hooks/post-command "$TEST_PLUGIN_DIR/hooks/post-command"
   cp lib/functions.sh "$TEST_PLUGIN_DIR/lib/functions.sh"
+  cp lib/sbc_shared_cli.py "$TEST_PLUGIN_DIR/lib/sbc_shared_cli.py"
+  cp -R lib/sbc_shared "$TEST_PLUGIN_DIR/lib/sbc_shared"
 }
 
 @test "complains if ACTION is not recognized" {

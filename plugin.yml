@@ -3,6 +3,7 @@ description: Common functions to used to build and deliver SBC docker images
 author: https://github.com/Sage
 requirements:
   - aws
+  - python3
 configuration:
   properties:
     action:

@@ -1,7 +1,12 @@
 services:
   tests:
-    image: buildkite/plugin-tester
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    image: sbc-shared-buildkite-plugin-tester
     platform: linux/amd64
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
     volumes:
       - ".:/plugin"
   lint:

@@ -1,9 +1,22 @@
 # sbc-shared-buildkite-plugin
 Collection of Sage specific functions used with Buildkite
 
+## Implementation
+
+The Buildkite hook interfaces are kept in `hooks/`, while their self-contained
+logic lives in the `lib/sbc_shared` Python package. `hooks/pre-command` remains
+a small shell adapter because Buildkite needs its exports to affect the calling
+shell. `lib/functions.sh` remains available as the public shell-function library
+used by consuming repositories.
+
+Python 3 is required on Buildkite agents. The Compose test service builds on the
+standard plugin tester image and installs Python 3 for parity with those agents.
+
 ## Coverage Gate Script
 
-The `lib/code_coverage_checker.sh` script implements a coverage gate that validates PR coverage against a baseline branch.
+The Python coverage implementation, also exposed through the compatible
+`lib/code_coverage_checker.sh` entry point, validates PR coverage against a
+baseline branch.
 
 ### What It Does
 
