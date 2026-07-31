@@ -5,6 +5,11 @@ load "$BATS_PLUGIN_PATH/load.bash"
 bats_require_minimum_version 1.5.0
 
 setup() {
+  export PLUGIN_ROOT="$BATS_TEST_DIRNAME/.."
+  export TEST_WORKING_DIR="$BATS_TEST_TMPDIR/workspace"
+
+  mkdir -p "$TEST_WORKING_DIR"
+  cd "$TEST_WORKING_DIR"
   mkdir -p .buildkite
   echo "myapp" > .buildkite/.application
 
@@ -15,22 +20,21 @@ setup() {
 }
 
 teardown() {
-  [ -f .buildkite/.application ] && rm .buildkite/.application
-  [ -d .buildkite ] && rmdir .buildkite
+  cd "$PLUGIN_ROOT"
 }
 
 set_up_push_param_fixture() {
   TEST_PLUGIN_DIR="$BATS_TEST_TMPDIR/plugin"
 
   mkdir -p "$TEST_PLUGIN_DIR/hooks" "$TEST_PLUGIN_DIR/lib" "$TEST_PLUGIN_DIR/configuration"
-  cp hooks/post-command "$TEST_PLUGIN_DIR/hooks/post-command"
-  cp lib/functions.sh "$TEST_PLUGIN_DIR/lib/functions.sh"
+  cp "$PLUGIN_ROOT/hooks/post-command" "$TEST_PLUGIN_DIR/hooks/post-command"
+  cp "$PLUGIN_ROOT/lib/functions.sh" "$TEST_PLUGIN_DIR/lib/functions.sh"
 }
 
 @test "complains if ACTION is not recognized" {
   export BUILDKITE_PLUGIN_SBC_SHARED_ACTION="not_a_real_action"
 
-  run ./hooks/post-command
+  run "$PLUGIN_ROOT/hooks/post-command"
 
   [[ "$status" -eq 1 ]]
   [[ "$output" == *"Unsupported action"* ]]
@@ -59,7 +63,7 @@ set_up_push_image_env_vars() {
 
   stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
 
-  run -0 ./hooks/post-command
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
 
   [[ "${lines[0]}" == *"--- :floppy_disk: Push test image for myapp"* ]]
   [[ "${lines[1]}" == *"Pushing image for myapp using tag: mybranch"* ]]
@@ -123,7 +127,7 @@ set_up_push_image_env_vars() {
 
   stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 123.buildkite.ecr.repo/myrepo:myapp-mytag-arm64-build-123 : echo pushing multi-arch manifest"
 
-  run -0 ./hooks/post-command
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
 
   [[ "${lines[0]}" == *"--- :floppy_disk: Push test image for myapp"* ]]
   [[ "${lines[1]}" == *"Pushing image for myapp using tag: mybranch"* ]]
@@ -140,7 +144,7 @@ set_up_push_image_env_vars() {
   stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing app manifest"
   stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 : echo pushing db manifest"
 
-  run -0 ./hooks/post-command
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
 
   [[ "$output" == *"pushing app manifest"* ]]
   [[ "$output" == *"DB image"* ]]

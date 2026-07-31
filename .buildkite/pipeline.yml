@@ -1,5 +1,10 @@
 steps:
-  - label: ":bat: Run Bats Tests"
+  - label: ":bat: Tests"
     plugins:
       - docker-compose#v5.13.0:
           run: tests
+
+  - label: ":lint-roller: Lint"
+    plugins:
+      - docker-compose#v5.13.0:
+          run: lint
