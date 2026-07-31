@@ -118,7 +118,7 @@ JSON
   run bash ./lib/code_coverage_checker.sh
 
   [[ "$status" -eq 0 ]]
-  [[ "$output" == *"Minimum allowed coverage: 89.0000%"* ]]
+  [[ "$output" == *"Minimum allowed coverage: 89.00%"* ]]
   [[ "$output" == *"OK: PR coverage (89.2%) is within tolerance"* ]]
 }
 
@@ -136,8 +136,8 @@ JSON
   run bash ./lib/code_coverage_checker.sh
 
   [[ "$status" -eq 1 ]]
-  [[ "$output" == *"Minimum allowed coverage: 89.0000%"* ]]
-  [[ "$output" == *"FAIL: PR coverage (88.8%) is below the minimum allowed coverage (89.0000%)."* ]]
+  [[ "$output" == *"Minimum allowed coverage: 89.00%"* ]]
+  [[ "$output" == *"FAIL: PR coverage (88.8%) is below the minimum allowed coverage (89.00%)."* ]]
 }
 
 @test "coverage checker rejects invalid COVERAGE_TOLERANCE" {
