@@ -1,0 +1,5 @@
+steps:
+  - label: ":bat: Run Bats Tests"
+    plugins:
+      - docker-compose#v5.13.0:
+          run: tests
