@@ -3,17 +3,19 @@
 load "$BATS_PLUGIN_PATH/load.bash"
 
 setup() {
-  source lib/functions.sh
+  export PLUGIN_ROOT="$BATS_TEST_DIRNAME/.."
+  export TEST_WORKING_DIR="$BATS_TEST_TMPDIR/workspace"
 
+  source "$PLUGIN_ROOT/lib/functions.sh"
+
+  mkdir -p "$TEST_WORKING_DIR"
+  cd "$TEST_WORKING_DIR"
   mkdir -p .buildkite
   echo "myapp" > .buildkite/.application
 }
 
 teardown() {
-  [ -f .buildkite/.application ] && rm .buildkite/.application
-  if [ -d .buildkite ]; then
-    rmdir .buildkite
-  fi
+  cd "$PLUGIN_ROOT"
 }
 
 @test "setup() requires at least one argument" {

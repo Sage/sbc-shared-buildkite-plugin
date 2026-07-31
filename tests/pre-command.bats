@@ -3,6 +3,11 @@
 load "$BATS_PLUGIN_PATH/load.bash"
 
 setup() {
+  export PLUGIN_ROOT="$BATS_TEST_DIRNAME/.."
+  export TEST_WORKING_DIR="$BATS_TEST_TMPDIR/workspace"
+
+  mkdir -p "$TEST_WORKING_DIR"
+  cd "$TEST_WORKING_DIR"
   mkdir -p .buildkite
   echo "myapp" > .buildkite/.application
 
@@ -14,19 +19,16 @@ setup() {
 }
 
 teardown() {
-  [ -f .buildkite/.application ] && rm .buildkite/.application
-  [ -f .buildkite/release.sh ] && rm .buildkite/release.sh
-  [ -d .buildkite ] && rmdir .buildkite
-
   unstub docker
   unset BUILDKITE_BRANCH BUILDKITE_COMMIT AWS_REGION BUILDKITE_PLUGIN_SBC_SHARED_ACTION
+  cd "$PLUGIN_ROOT"
 }
 
 @test "pre-command hook copies release.sh when ACTION is set" {
   [[ ! -f .buildkite/release.sh ]]
 
   export BUILDKITE_PLUGIN_SBC_SHARED_ACTION="publish_gem"
-  run ./hooks/pre-command
+  run "$PLUGIN_ROOT/hooks/pre-command"
 
   [[ -f .buildkite/release.sh ]]
 }
@@ -35,7 +37,7 @@ teardown() {
   export BUILDKITE_PLUGIN_SBC_SHARED_ACTION="publish_gem"
   export BUILDKITE_PLUGIN_SBC_SHARED_COVERAGE_TOLERANCE="1.25"
 
-  run bash -c 'source ./hooks/pre-command; echo "${COVERAGE_TOLERANCE:-}"'
+  run bash -c 'source "$PLUGIN_ROOT/hooks/pre-command"; echo "${COVERAGE_TOLERANCE:-}"'
 
   [[ "$status" -eq 0 ]]
   [[ "$output" == *"1.25"* ]]
