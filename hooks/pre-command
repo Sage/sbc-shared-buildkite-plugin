@@ -44,6 +44,8 @@ fi
 
 # If the target image needs to have a custom tag other than the GH tag/branch
 export TARGET_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TARGET_TAG:-}"
+export VEX_SCRIPT="${BUILDKITE_PLUGIN_SBC_SHARED_VEX_SCRIPT:-}"
+export VEX_REFERRER_REPOSITORY="${BUILDKITE_PLUGIN_SBC_SHARED_VEX_REFERRER_REPOSITORY:-}"
 
 set -u
 export DOCKER_TAG="${BUILDKITE_PLUGIN_SBC_SHARED_TAG:-application}"

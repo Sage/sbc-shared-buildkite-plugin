@@ -25,6 +25,10 @@ configuration:
       type: boolean
     extra_suffix:
       type: string
+    vex_script:
+      type: string
+    vex_referrer_repository:
+      type: string
     coverage:
       type: number
     coverage_tolerance:

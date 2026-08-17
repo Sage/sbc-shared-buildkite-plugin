@@ -152,3 +152,51 @@ set_up_push_image_env_vars() {
 
   unstub docker
 }
+
+@test "push_image does not attach VEX when vex_script is unset" {
+  set_up_push_image_env_vars
+
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
+
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
+
+  [[ "$output" != *"Attach VEX attestation"* ]]
+
+  unstub docker
+}
+
+@test "push_image attaches VEX with OCI referrer by default" {
+  set_up_push_image_env_vars
+  export VEX_SCRIPT="$PLUGIN_ROOT/tests/support/emit_vex.sh"
+  export VEX_OUTPUT_FILE="$PLUGIN_ROOT/tests/support/generated.vex.json"
+
+  echo '{"statements":[]}' > "$PLUGIN_ROOT/tests/support/generated.vex.json"
+
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
+  stub docker "scout attestation add --file $PLUGIN_ROOT/tests/support/generated.vex.json --predicate-type https://openvex.dev/ns/v0.2.0 --referrer 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo attaching vex"
+
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
+
+  [[ "$output" == *"Attach VEX attestation to 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch"* ]]
+  [[ "$output" == *"attaching vex"* ]]
+
+  unstub docker
+}
+
+@test "push_image attaches VEX with referrer repository when configured" {
+  set_up_push_image_env_vars
+  export VEX_SCRIPT="$PLUGIN_ROOT/tests/support/emit_vex.sh"
+  export VEX_OUTPUT_FILE="$PLUGIN_ROOT/tests/support/generated.vex.json"
+  export VEX_REFERRER_REPOSITORY="123.dkr.ecr.made-up-region.amazonaws.com/myrepo-referrers"
+
+  echo '{"statements":[]}' > "$PLUGIN_ROOT/tests/support/generated.vex.json"
+
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
+  stub docker "scout attestation add --file $PLUGIN_ROOT/tests/support/generated.vex.json --predicate-type https://openvex.dev/ns/v0.2.0 --referrer-repository 123.dkr.ecr.made-up-region.amazonaws.com/myrepo-referrers 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo attaching vex via repo"
+
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
+
+  [[ "$output" == *"attaching vex via repo"* ]]
+
+  unstub docker
+}

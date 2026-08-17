@@ -12,10 +12,12 @@ if [[ $ACTION == "push_image" ]]; then
 
   # Push the docker image
   push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG --multiarch $MULTIARCH_IMAGE_PUSH
+  attach_vex_attestation "$TARGET_ECR"
 
   if [ -n "${BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX:-}" ]; then
     BK_BRANCH="$INITIAL_BK_BRANCH-$BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX"
     push_image --account_id $ACCOUNT_ID --app $APP --tag "${DOCKER_TAG}-${BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX}" --multiarch $MULTIARCH_IMAGE_PUSH
+    attach_vex_attestation "$TARGET_ECR"
   fi
 
   # For dev, other images like database and test and master should be pushed.
