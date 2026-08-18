@@ -212,6 +212,10 @@ attach_vex_attestation() {
 
   echo "--- :mag: Attach VEX attestation to $image_ref"
 
+  mkdir -p "$HOME/.docker"
+
+  curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
+
   docker scout attestation add \
     --file "$vex_file" \
     --predicate-type https://openvex.dev/ns/v0.2.0 \
