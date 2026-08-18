@@ -188,43 +188,36 @@ push_image () {
 
 attach_vex_attestation() {
   local image_ref=$1
-  local referrer_args=()
+  local vex_script=${VEX_SCRIPT:-}
+  local checkout_path=${BUILDKITE_BUILD_CHECKOUT_PATH:-$PWD}
+  local vex_script_path
 
-  if [[ -z ${VEX_SCRIPT:-} ]]; then
-    return 0
+  [ -n "$vex_script" ] || return 0
+
+  vex_script_path=$vex_script
+  if [[ "$vex_script_path" != /* ]]; then
+    vex_script_path="$checkout_path/$vex_script_path"
   fi
 
-  # if [[ ! -x $VEX_SCRIPT ]]; then
-  #   echo "VEX script is not executable: $VEX_SCRIPT"
-  #   exit 1
-  # fi
+  if [ ! -f "$vex_script_path" ]; then
+    echo "VEX script not found: $vex_script_path" >&2
+    return 1
+  fi
 
   local vex_file
-  vex_file=$($VEX_SCRIPT "$image_ref")
-
-  if [[ -z $vex_file ]]; then
-    echo "VEX script did not return a file path"
-    exit 1
-  fi
-
-  if [[ ! -f $vex_file ]]; then
-    echo "VEX file does not exist: $vex_file"
-    exit 1
-  fi
-
-  if [[ -n ${VEX_REFERRER_REPOSITORY:-} ]]; then
-    referrer_args=(--referrer-repository "$VEX_REFERRER_REPOSITORY")
-  else
-    referrer_args=(--referrer)
-  fi
+  vex_file=$(
+    cd "$checkout_path"
+    "$vex_script_path" "$image_ref"
+  )
 
   echo "--- :mag: Attach VEX attestation to $image_ref"
 
   docker scout attestation add \
     --file "$vex_file" \
     --predicate-type https://openvex.dev/ns/v0.2.0 \
-    "${referrer_args[@]}" \
-    "$image_ref"
+    --referrer "$image_ref"
+
+  rm -f "$vex_file"
 }
 
 compare_coverage_metrics() {
