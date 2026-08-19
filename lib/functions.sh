@@ -210,15 +210,25 @@ attach_vex_attestation() {
     "$vex_script_path" "$image_ref"
   )
 
+  # Upload vex file as a buildkite artifact
+  if [ -n "$BUILDKITE" ]; then
+    echo "--- :artifacts: Upload VEX attestation"
+    buildkite-agent artifact upload "$vex_file"
+  fi
+
   echo "--- :mag: Attach VEX attestation to $image_ref"
 
   mkdir -p "$HOME/.docker"
 
   curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
 
+  echo "$vex_file"
+  docker scout --help
+
   docker scout attestation add \
     --file "$vex_file" \
-    --predicate-type https://openvex.dev/ns/v0.2.0 \
+    --predicate-type "https://openvex.dev/ns/v0.2.0" \
+    --org "sage" \
     --referrer "$image_ref"
 
   rm -f "$vex_file"
