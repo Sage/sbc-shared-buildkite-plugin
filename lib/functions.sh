@@ -218,18 +218,34 @@ attach_vex_attestation() {
 
   echo "--- :mag: Attach VEX attestation to $image_ref"
 
-  mkdir -p "$HOME/.docker"
+  # mkdir -p "$HOME/.docker"
 
-  curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
+  # curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
 
-  echo "$vex_file"
-  docker scout --help
+  # echo "$vex_file"
+  # docker scout --help
 
-  docker scout attestation add \
-    --file "$vex_file" \
-    --predicate-type "https://openvex.dev/ns/v0.2.0" \
-    --org "sage" \
-    --referrer "$image_ref"
+  docker run --rm \
+    -e DOCKER_SCOUT_HUB_USER=sage \
+    -e DOCKER_SCOUT_HUB_PASSWORD=$DOCKER_HUB_API_KEY \
+    -e DOCKER_CONFIG=/root/.docker \
+    -v "$HOME/.docker:/root/.docker" \
+    -v "$checkout_path:/workspace" \
+    -v "$vex_file:/workspace/$(basename "$vex_file")" \
+    -w /workspace \
+    docker/scout-cli attestation add \
+      --file "/workspace/$(basename "$vex_file")" \
+      --predicate-type "https://openvex.dev/ns/v0.2.0" \
+      --org "sage" \
+      --referrer "$image_ref"
+
+  # docker run --rm docker/scout-cli --help
+
+  # docker scout attestation add \
+  #   --file "$vex_file" \
+  #   --predicate-type "https://openvex.dev/ns/v0.2.0" \
+  #   --org "sage" \
+  #   --referrer "$image_ref"
 
   rm -f "$vex_file"
 }
