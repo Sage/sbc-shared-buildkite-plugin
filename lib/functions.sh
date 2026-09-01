@@ -210,34 +210,45 @@ attach_vex_attestation() {
     "$vex_script_path" "$image_ref"
   )
 
-  # Upload vex file as a buildkite artifact
-  if [ -n "$BUILDKITE" ]; then
+  # Upload vex file as a buildkite artifact when the Buildkite agent is present.
+  # Some local/test environments do not install the `buildkite-agent` binary, so
+  # skip this silently rather than failing the whole VEX attach step.
+  if [ -n "$BUILDKITE" ] && command -v buildkite-agent >/dev/null 2>&1; then
     echo "--- :artifacts: Upload VEX attestation"
     buildkite-agent artifact upload "$vex_file"
   fi
 
   echo "--- :mag: Attach VEX attestation to $image_ref"
 
-  # mkdir -p "$HOME/.docker"
+  local docker_config_dir="${DOCKER_CONFIG:-$HOME/.docker}"
+  mkdir -p "$docker_config_dir"
 
-  # curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
+  local vex_file_name
+  vex_file_name=$(basename "$vex_file")
 
-  # echo "$vex_file"
-  # docker scout --help
-
-  docker run --rm \
-    -e DOCKER_SCOUT_HUB_USER=sage \
-    -e DOCKER_SCOUT_HUB_PASSWORD=$DOCKER_HUB_API_KEY \
-    -e DOCKER_CONFIG=/root/.docker \
-    -v "$HOME/.docker:/root/.docker" \
-    -v "$checkout_path:/workspace" \
-    -v "$vex_file:/workspace/$(basename "$vex_file")" \
-    -w /workspace \
-    docker/scout-cli attestation add \
-      --file "/workspace/$(basename "$vex_file")" \
+  if docker scout --help >/dev/null 2>&1; then
+    DOCKER_CONFIG="$docker_config_dir" docker scout attestation add \
+      --file "$vex_file" \
       --predicate-type "https://openvex.dev/ns/v0.2.0" \
       --org "sage" \
       --referrer "$image_ref"
+  else
+    # Fallback only when the host CLI is unavailable. Keep the config isolated so
+    # the container cannot accidentally clobber the agent's Docker configuration.
+    docker run --rm \
+      -e DOCKER_SCOUT_HUB_USER=sage \
+      -e DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}" \
+      -e DOCKER_CONFIG=/tmp/scout-docker-config \
+      -v "$docker_config_dir:/tmp/scout-docker-config" \
+      -v "$checkout_path:/workspace" \
+      -v "$vex_file:/workspace/$vex_file_name" \
+      -w /workspace \
+      docker/scout-cli attestation add \
+        --file "/workspace/$vex_file_name" \
+        --predicate-type "https://openvex.dev/ns/v0.2.0" \
+        --org "sage" \
+        --referrer "$image_ref"
+  fi
 
   # docker run --rm docker/scout-cli --help
 
