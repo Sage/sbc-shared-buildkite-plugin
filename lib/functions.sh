@@ -187,6 +187,18 @@ push_image () {
 }
 
 attach_vex_attestation() {
+  export DOCKER_SCOUT_HUB_USER=sage
+  export DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}"
+  export HOME=/var/lib/buildkite-agent
+  export DOCKER_CONFIG="$HOME/.docker"
+  mkdir -p "$DOCKER_CONFIG/cli-plugins"
+
+  curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
+
+  ls -l "$DOCKER_CONFIG/cli-plugins"
+
+  docker scout version
+
   local image_ref=$1
   local vex_script=${VEX_SCRIPT:-}
   local checkout_path=${BUILDKITE_BUILD_CHECKOUT_PATH:-$PWD}
@@ -232,9 +244,13 @@ attach_vex_attestation() {
       --predicate-type "https://openvex.dev/ns/v0.2.0" \
       --org "sage" \
       --referrer "$image_ref"
-  else
-    # Fallback only when the host CLI is unavailable. Keep the config isolated so
-    # the container cannot accidentally clobber the agent's Docker configuration.
+  elif command -v docker-scout >/dev/null 2>&1; then
+    DOCKER_CONFIG="$docker_config_dir" docker-scout attestation add \
+      --file "$vex_file" \
+      --predicate-type "https://openvex.dev/ns/v0.2.0" \
+      --org "sage" \
+      --referrer "$image_ref"
+  elif docker run --rm docker/scout-cli --help >/dev/null 2>&1; then
     docker run --rm \
       -e DOCKER_SCOUT_HUB_USER=sage \
       -e DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}" \
@@ -248,15 +264,10 @@ attach_vex_attestation() {
         --predicate-type "https://openvex.dev/ns/v0.2.0" \
         --org "sage" \
         --referrer "$image_ref"
+  else
+    echo "Docker Scout CLI not available on this agent; install the scout plugin or docker-scout binary before attaching VEX attestations." >&2
+    return 1
   fi
-
-  # docker run --rm docker/scout-cli --help
-
-  # docker scout attestation add \
-  #   --file "$vex_file" \
-  #   --predicate-type "https://openvex.dev/ns/v0.2.0" \
-  #   --org "sage" \
-  #   --referrer "$image_ref"
 
   rm -f "$vex_file"
 }
