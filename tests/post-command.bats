@@ -173,8 +173,11 @@ set_up_push_image_env_vars() {
   echo '{"statements":[]}' > "$PLUGIN_ROOT/tests/support/generated.vex.json"
 
   stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
+  stub aws "ecr get-login-password --region made-up-region : echo fake-ecr-password"
+  stub docker "login --username AWS --password-stdin 123.dkr.ecr.made-up-region.amazonaws.com : echo logged into ecr"
+  stub docker "scout version : exit 0"
   stub docker "scout --help : exit 0"
-  stub docker "scout attestation add --file $PLUGIN_ROOT/tests/support/generated.vex.json --predicate-type https://openvex.dev/ns/v0.2.0 --referrer 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo attaching vex"
+  stub docker "scout attestation add --file $PLUGIN_ROOT/tests/support/generated.vex.json --predicate-type https://openvex.dev/ns/v0.2.0 --org sage --referrer 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo attaching vex"
 
   run -0 "$PLUGIN_ROOT/hooks/post-command"
 

@@ -189,14 +189,12 @@ push_image () {
 attach_vex_attestation() {
   export DOCKER_SCOUT_HUB_USER=sage
   export DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}"
-  export HOME=/var/lib/buildkite-agent
-  export DOCKER_CONFIG="$HOME/.docker"
+  export HOME="${HOME:-/var/lib/buildkite-agent}"
+  export DOCKER_CONFIG="${DOCKER_CONFIG:-$HOME/.docker}"
   mkdir -p "$DOCKER_CONFIG/cli-plugins"
 
   curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
-
   ls -l "$DOCKER_CONFIG/cli-plugins"
-
   docker scout version
 
   local image_ref=$1
@@ -213,6 +211,18 @@ attach_vex_attestation() {
 
   if [ ! -f "$vex_script_path" ]; then
     echo "VEX script not found: $vex_script_path" >&2
+    return 1
+  fi
+
+  local scout_plugin="$DOCKER_CONFIG/cli-plugins/docker-scout"
+  if [[ ! -x "$scout_plugin" ]] && ! command -v docker-scout >/dev/null 2>&1; then
+    if ! docker run --rm docker/scout-cli --help >/dev/null 2>&1; then
+      curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
+    fi
+  fi
+
+  if [[ ! -x "$scout_plugin" ]] && ! command -v docker-scout >/dev/null 2>&1 && ! docker run --rm docker/scout-cli --help >/dev/null 2>&1; then
+    echo "Docker Scout CLI not available on this agent; install the scout plugin or docker-scout binary before attaching VEX attestations." >&2
     return 1
   fi
 
@@ -237,6 +247,17 @@ attach_vex_attestation() {
 
   local vex_file_name
   vex_file_name=$(basename "$vex_file")
+
+  local ecr_registry="${image_ref%%/*}"
+  local ecr_region="${ecr_registry#*.dkr.ecr.}"
+  ecr_region="${ecr_region%.amazonaws.com}"
+
+  if [[ "$ecr_registry" == *.dkr.ecr.*.amazonaws.com ]]; then
+    if command -v aws >/dev/null 2>&1; then
+      echo "--- :aws: Re-authenticating Docker for $ecr_registry"
+      aws ecr get-login-password --region "$ecr_region" | docker login --username AWS --password-stdin "$ecr_registry" >/dev/null
+    fi
+  fi
 
   if docker scout --help >/dev/null 2>&1; then
     DOCKER_CONFIG="$docker_config_dir" docker scout attestation add \
