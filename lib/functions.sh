@@ -191,11 +191,16 @@ attach_vex_attestation() {
   export DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}"
   export HOME="${HOME:-/var/lib/buildkite-agent}"
   export DOCKER_CONFIG="${DOCKER_CONFIG:-$HOME/.docker}"
+  export PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
   mkdir -p "$DOCKER_CONFIG/cli-plugins"
 
-  curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
-  ls -l "$DOCKER_CONFIG/cli-plugins"
-  docker scout version
+  local docker_bin
+  docker_bin="$(command -v docker || true)"
+  if [[ -z "$docker_bin" ]]; then
+    echo "Docker CLI is not installed on this agent; cannot install Docker Scout or attach VEX attestations." >&2
+    return 1
+  fi
+  export PATH="$(dirname "$docker_bin"):$PATH"
 
   local image_ref=$1
   local vex_script=${VEX_SCRIPT:-}
@@ -215,14 +220,15 @@ attach_vex_attestation() {
   fi
 
   local scout_plugin="$DOCKER_CONFIG/cli-plugins/docker-scout"
-  if [[ ! -x "$scout_plugin" ]] && ! command -v docker-scout >/dev/null 2>&1; then
-    if ! docker run --rm docker/scout-cli --help >/dev/null 2>&1; then
-      curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
-    fi
+  if [[ ! -x "$scout_plugin" ]]; then
+    echo "--- :docker: Installing Docker Scout CLI plugin"
+    HOME="$HOME" DOCKER_CONFIG="$DOCKER_CONFIG" PATH="$PATH" \
+      curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | \
+      sh -s --
   fi
 
-  if [[ ! -x "$scout_plugin" ]] && ! command -v docker-scout >/dev/null 2>&1 && ! docker run --rm docker/scout-cli --help >/dev/null 2>&1; then
-    echo "Docker Scout CLI not available on this agent; install the scout plugin or docker-scout binary before attaching VEX attestations." >&2
+  if [[ ! -x "$scout_plugin" ]] && ! docker scout version >/dev/null 2>&1; then
+    echo "Docker Scout CLI is not available on this agent; install the scout plugin before attaching VEX attestations." >&2
     return 1
   fi
 
@@ -232,9 +238,6 @@ attach_vex_attestation() {
     "$vex_script_path" "$image_ref"
   )
 
-  # Upload vex file as a buildkite artifact when the Buildkite agent is present.
-  # Some local/test environments do not install the `buildkite-agent` binary, so
-  # skip this silently rather than failing the whole VEX attach step.
   if [ -n "$BUILDKITE" ] && command -v buildkite-agent >/dev/null 2>&1; then
     echo "--- :artifacts: Upload VEX attestation"
     buildkite-agent artifact upload "$vex_file"
@@ -245,50 +248,21 @@ attach_vex_attestation() {
   local docker_config_dir="${DOCKER_CONFIG:-$HOME/.docker}"
   mkdir -p "$docker_config_dir"
 
-  local vex_file_name
-  vex_file_name=$(basename "$vex_file")
-
   local ecr_registry="${image_ref%%/*}"
   local ecr_region="${ecr_registry#*.dkr.ecr.}"
   ecr_region="${ecr_region%.amazonaws.com}"
 
-  if [[ "$ecr_registry" == *.dkr.ecr.*.amazonaws.com ]]; then
-    if command -v aws >/dev/null 2>&1; then
-      echo "--- :aws: Re-authenticating Docker for $ecr_registry"
-      aws ecr get-login-password --region "$ecr_region" | docker login --username AWS --password-stdin "$ecr_registry" >/dev/null
-    fi
+  if [[ "$ecr_registry" == *.dkr.ecr.*.amazonaws.com ]] && command -v aws >/dev/null 2>&1; then
+    echo "--- :aws: Re-authenticating Docker for $ecr_registry"
+    DOCKER_CONFIG="$docker_config_dir" aws ecr get-login-password --region "$ecr_region" | \
+      DOCKER_CONFIG="$docker_config_dir" docker login --username AWS --password-stdin "$ecr_registry" >/dev/null
   fi
 
-  if docker scout --help >/dev/null 2>&1; then
-    DOCKER_CONFIG="$docker_config_dir" docker scout attestation add \
-      --file "$vex_file" \
-      --predicate-type "https://openvex.dev/ns/v0.2.0" \
-      --org "sage" \
-      --referrer "$image_ref"
-  elif command -v docker-scout >/dev/null 2>&1; then
-    DOCKER_CONFIG="$docker_config_dir" docker-scout attestation add \
-      --file "$vex_file" \
-      --predicate-type "https://openvex.dev/ns/v0.2.0" \
-      --org "sage" \
-      --referrer "$image_ref"
-  elif docker run --rm docker/scout-cli --help >/dev/null 2>&1; then
-    docker run --rm \
-      -e DOCKER_SCOUT_HUB_USER=sage \
-      -e DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}" \
-      -e DOCKER_CONFIG=/tmp/scout-docker-config \
-      -v "$docker_config_dir:/tmp/scout-docker-config" \
-      -v "$checkout_path:/workspace" \
-      -v "$vex_file:/workspace/$vex_file_name" \
-      -w /workspace \
-      docker/scout-cli attestation add \
-        --file "/workspace/$vex_file_name" \
-        --predicate-type "https://openvex.dev/ns/v0.2.0" \
-        --org "sage" \
-        --referrer "$image_ref"
-  else
-    echo "Docker Scout CLI not available on this agent; install the scout plugin or docker-scout binary before attaching VEX attestations." >&2
-    return 1
-  fi
+  DOCKER_CONFIG="$docker_config_dir" docker scout attestation add \
+    --file "$vex_file" \
+    --predicate-type "https://openvex.dev/ns/v0.2.0" \
+    --org "sage" \
+    --referrer "$image_ref"
 
   rm -f "$vex_file"
 }

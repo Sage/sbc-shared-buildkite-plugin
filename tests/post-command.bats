@@ -165,12 +165,28 @@ set_up_push_image_env_vars() {
   unstub docker
 }
 
+@test "attach_vex_attestation fails fast if docker is not installed" {
+  original_path="$PATH"
+  PATH="/nonexistent"
+
+  run /bin/bash -lc 'PATH="/nonexistent"; source "$PLUGIN_ROOT/lib/functions.sh"; attach_vex_attestation "123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch"'
+  PATH="$original_path"
+
+  [[ "$status" -eq 1 ]]
+  [[ "$output" == *"Docker CLI is not installed on this agent"* ]]
+}
+
 @test "push_image attaches VEX with OCI referrer" {
   set_up_push_image_env_vars
   export VEX_SCRIPT="$PLUGIN_ROOT/tests/support/emit_vex.sh"
   export VEX_OUTPUT_FILE="$PLUGIN_ROOT/tests/support/generated.vex.json"
 
   echo '{"statements":[]}' > "$PLUGIN_ROOT/tests/support/generated.vex.json"
+
+  export DOCKER_CONFIG="$BATS_TEST_TMPDIR/docker-config"
+  mkdir -p "$DOCKER_CONFIG/cli-plugins"
+  printf '#!/usr/bin/env bash\n' > "$DOCKER_CONFIG/cli-plugins/docker-scout"
+  chmod +x "$DOCKER_CONFIG/cli-plugins/docker-scout"
 
   stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
   stub aws "ecr get-login-password --region made-up-region : echo fake-ecr-password"
