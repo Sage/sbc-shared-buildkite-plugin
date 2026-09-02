@@ -187,27 +187,65 @@ push_image () {
 }
 
 attach_vex_attestation() {
+  local image_ref=$1
+  local vex_script=${VEX_SCRIPT:-}
+
+  [ -n "$vex_script" ] || return 0
+
   export DOCKER_SCOUT_HUB_USER=sage
   export DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}"
   export HOME="${HOME:-/var/lib/buildkite-agent}"
   export DOCKER_CONFIG="${DOCKER_CONFIG:-$HOME/.docker}"
+  export DOCKER_HOME="$DOCKER_CONFIG"
   export PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:$PATH"
   mkdir -p "$DOCKER_CONFIG/cli-plugins"
 
+  echo "--- :docker: Docker Scout environment diagnostics"
+  echo "user=$(id -un 2>/dev/null || echo unknown) uid=$(id -u 2>/dev/null || echo unknown)"
+  echo "HOME=$HOME"
+  echo "DOCKER_CONFIG=$DOCKER_CONFIG"
+  echo "DOCKER_HOME=$DOCKER_HOME"
+  echo "PATH=$PATH"
+  echo "SHELL=${SHELL:-unset}"
+  echo "PWD=$PWD"
+  echo "BUILDKITE_BUILD_CHECKOUT_PATH=${BUILDKITE_BUILD_CHECKOUT_PATH:-unset}"
+
   local docker_bin
-  docker_bin="$(command -v docker || true)"
-  if [[ -z "$docker_bin" ]]; then
+  docker_bin="$(command -v docker 2>/dev/null || true)"
+  echo "docker command path=${docker_bin:-not found}"
+
+  if [[ -z "$docker_bin" ]] || [[ ! -x "$docker_bin" ]]; then
+    echo "Docker candidates in standard locations:"
+    for docker_candidate in /usr/local/bin/docker /usr/bin/docker /bin/docker /snap/bin/docker; do
+      if [[ -e "$docker_candidate" ]]; then
+        ls -l "$docker_candidate" 2>&1 || true
+      fi
+    done
     echo "Docker CLI is not installed on this agent; cannot install Docker Scout or attach VEX attestations." >&2
     return 1
   fi
+
+  echo "Docker executable metadata:"
+  ls -l "$docker_bin" 2>&1 || true
+  echo "docker resolved path=$(readlink -f "$docker_bin" 2>/dev/null || echo unavailable)"
   export PATH="$(dirname "$docker_bin"):$PATH"
 
-  local image_ref=$1
-  local vex_script=${VEX_SCRIPT:-}
+  local docker_version
+  local docker_version_status
+  if docker_version=$("$docker_bin" --version 2>&1); then
+    docker_version_status=0
+  else
+    docker_version_status=$?
+  fi
+  echo "docker --version status=$docker_version_status output=${docker_version:-empty}"
+
+  if [[ "$docker_version_status" -ne 0 ]]; then
+    echo "Docker CLI is not available on this agent; cannot install Docker Scout or attach VEX attestations." >&2
+    return 1
+  fi
+
   local checkout_path=${BUILDKITE_BUILD_CHECKOUT_PATH:-$PWD}
   local vex_script_path
-
-  [ -n "$vex_script" ] || return 0
 
   vex_script_path=$vex_script
   if [[ "$vex_script_path" != /* ]]; then
@@ -220,14 +258,49 @@ attach_vex_attestation() {
   fi
 
   local scout_plugin="$DOCKER_CONFIG/cli-plugins/docker-scout"
-  if [[ ! -x "$scout_plugin" ]]; then
-    echo "--- :docker: Installing Docker Scout CLI plugin"
-    HOME="$HOME" DOCKER_CONFIG="$DOCKER_CONFIG" PATH="$PATH" \
-      curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | \
-      sh -s --
+  echo "Docker Scout installation directories:"
+  for scout_directory in "$HOME/.docker" "$DOCKER_CONFIG" "$DOCKER_CONFIG/cli-plugins"; do
+    if [[ -e "$scout_directory" ]]; then
+      ls -ld "$scout_directory" 2>&1 || true
+    else
+      echo "$scout_directory does not exist"
+    fi
+  done
+
+  if [[ -e "$scout_plugin" ]]; then
+    ls -l "$scout_plugin" 2>&1 || true
+  else
+    echo "$scout_plugin does not exist"
   fi
 
-  if [[ ! -x "$scout_plugin" ]] && ! docker scout version >/dev/null 2>&1; then
+  if [[ ! -x "$scout_plugin" ]]; then
+    echo "--- :docker: Installing Docker Scout CLI plugin"
+    local scout_install_status
+    if HOME="$HOME" DOCKER_CONFIG="$DOCKER_CONFIG" DOCKER_HOME="$DOCKER_HOME" PATH="$PATH" \
+      sh -c 'curl -fsSL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s -- -d'; then
+      scout_install_status=0
+    else
+      scout_install_status=$?
+    fi
+    echo "Docker Scout installer status=$scout_install_status"
+
+    if [[ -e "$scout_plugin" ]]; then
+      ls -l "$scout_plugin" 2>&1 || true
+    else
+      echo "$scout_plugin was not created"
+    fi
+  fi
+
+  local scout_version
+  local scout_version_status
+  if scout_version=$("$docker_bin" scout version 2>&1); then
+    scout_version_status=0
+  else
+    scout_version_status=$?
+  fi
+  echo "docker scout version status=$scout_version_status output=${scout_version:-empty}"
+
+  if [[ "$scout_version_status" -ne 0 ]]; then
     echo "Docker Scout CLI is not available on this agent; install the scout plugin before attaching VEX attestations." >&2
     return 1
   fi
@@ -255,10 +328,10 @@ attach_vex_attestation() {
   if [[ "$ecr_registry" == *.dkr.ecr.*.amazonaws.com ]] && command -v aws >/dev/null 2>&1; then
     echo "--- :aws: Re-authenticating Docker for $ecr_registry"
     DOCKER_CONFIG="$docker_config_dir" aws ecr get-login-password --region "$ecr_region" | \
-      DOCKER_CONFIG="$docker_config_dir" docker login --username AWS --password-stdin "$ecr_registry" >/dev/null
+      DOCKER_CONFIG="$docker_config_dir" "$docker_bin" login --username AWS --password-stdin "$ecr_registry" >/dev/null
   fi
 
-  DOCKER_CONFIG="$docker_config_dir" docker scout attestation add \
+  DOCKER_CONFIG="$docker_config_dir" "$docker_bin" scout attestation add \
     --file "$vex_file" \
     --predicate-type "https://openvex.dev/ns/v0.2.0" \
     --org "sage" \
