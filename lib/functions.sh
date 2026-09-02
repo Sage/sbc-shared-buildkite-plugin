@@ -303,10 +303,25 @@ attach_vex_attestation() {
     return 1
   fi
 
+  local docker_config_dir="${DOCKER_CONFIG:-$HOME/.docker}"
+  local attestation_image_ref=$image_ref
+  local image_inspect
+  local image_digest=
+  image_inspect=$(
+    DOCKER_CONFIG="$docker_config_dir" "$docker_bin" buildx imagetools inspect \
+      "$image_ref"
+  )
+  if [[ "$image_inspect" =~ Digest:[[:space:]]+(sha256:[a-f0-9]+) ]]; then
+    image_digest="${BASH_REMATCH[1]}"
+  fi
+  if [[ "$image_digest" == sha256:* ]]; then
+    attestation_image_ref="${image_ref%:*}@$image_digest"
+  fi
+
   local vex_file
   vex_file=$(
     cd "$checkout_path"
-    "$vex_script_path" "$image_ref"
+    "$vex_script_path" "$attestation_image_ref"
   )
 
   if [ -n "$BUILDKITE" ] && command -v buildkite-agent >/dev/null 2>&1; then
@@ -314,9 +329,8 @@ attach_vex_attestation() {
     buildkite-agent artifact upload "$vex_file"
   fi
 
-  echo "--- :mag: Attach VEX attestation to $image_ref"
+  echo "--- :mag: Attach VEX attestation to $attestation_image_ref"
 
-  local docker_config_dir="${DOCKER_CONFIG:-$HOME/.docker}"
   mkdir -p "$docker_config_dir"
 
   local ecr_registry="${image_ref%%/*}"
@@ -339,7 +353,7 @@ attach_vex_attestation() {
     --org "$scout_org" \
     --referrer \
     --referrer-repository "$referrer_repository" \
-    "$image_ref"
+    "$attestation_image_ref"
 
   rm -f "$vex_file"
 }
