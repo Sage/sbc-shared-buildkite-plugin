@@ -194,7 +194,7 @@ set_up_push_image_env_vars() {
   stub docker "scout version : exit 0"
   stub aws "ecr get-login-password --region made-up-region : echo fake-ecr-password"
   stub docker "login --username AWS --password-stdin 123.dkr.ecr.made-up-region.amazonaws.com : echo logged into ecr"
-  stub docker "scout attestation add --file $PLUGIN_ROOT/tests/support/generated.vex.json --predicate-type https://openvex.dev/ns/v0.2.0 --org sage --referrer 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo attaching vex"
+  stub docker "scout attestation add --file $PLUGIN_ROOT/tests/support/generated.vex.json --predicate-type https://openvex.dev/ns/v0.2.0 --org sage --referrer --referrer-repository 123.dkr.ecr.made-up-region.amazonaws.com/myrepo 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo attaching vex"
 
   run -0 "$PLUGIN_ROOT/hooks/post-command"
 
@@ -202,6 +202,32 @@ set_up_push_image_env_vars() {
   [[ "$output" == *"docker --version status=0 output=Docker version test"* ]]
   [[ "$output" == *"docker scout version status=0"* ]]
   [[ "$output" == *"Attach VEX attestation to 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch"* ]]
+  [[ "$output" == *"attaching vex"* ]]
+
+  unstub docker
+}
+
+@test "push_image attaches VEX to configured referrer repository" {
+  set_up_push_image_env_vars
+  export VEX_SCRIPT="$PLUGIN_ROOT/tests/support/emit_vex.sh"
+  export VEX_OUTPUT_FILE="$PLUGIN_ROOT/tests/support/generated.vex.json"
+  export VEX_REFERRER_REPOSITORY="123.dkr.ecr.made-up-region.amazonaws.com/vex-referrers"
+  export DOCKER_CONFIG="$BATS_TEST_TMPDIR/docker-config"
+
+  echo '{"statements":[]}' > "$VEX_OUTPUT_FILE"
+  mkdir -p "$DOCKER_CONFIG/cli-plugins"
+  printf '#!/usr/bin/env bash\n' > "$DOCKER_CONFIG/cli-plugins/docker-scout"
+  chmod +x "$DOCKER_CONFIG/cli-plugins/docker-scout"
+
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
+  stub docker "--version : echo Docker version test"
+  stub docker "scout version : exit 0"
+  stub aws "ecr get-login-password --region made-up-region : echo fake-ecr-password"
+  stub docker "login --username AWS --password-stdin 123.dkr.ecr.made-up-region.amazonaws.com : echo logged into ecr"
+  stub docker "scout attestation add --file $VEX_OUTPUT_FILE --predicate-type https://openvex.dev/ns/v0.2.0 --org sage --referrer --referrer-repository $VEX_REFERRER_REPOSITORY 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch : echo attaching vex"
+
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
+
   [[ "$output" == *"attaching vex"* ]]
 
   unstub docker

@@ -192,8 +192,6 @@ attach_vex_attestation() {
 
   [ -n "$vex_script" ] || return 0
 
-  export DOCKER_SCOUT_HUB_USER=sage
-  export DOCKER_SCOUT_HUB_PASSWORD="${DOCKER_HUB_API_KEY:-}"
   export HOME="${HOME:-/var/lib/buildkite-agent}"
   export DOCKER_CONFIG="${DOCKER_CONFIG:-$HOME/.docker}"
   export DOCKER_HOME="$DOCKER_CONFIG"
@@ -324,6 +322,10 @@ attach_vex_attestation() {
   local ecr_registry="${image_ref%%/*}"
   local ecr_region="${ecr_registry#*.dkr.ecr.}"
   ecr_region="${ecr_region%.amazonaws.com}"
+  local image_repository="${image_ref%@*}"
+  image_repository="${image_repository%:*}"
+  local referrer_repository="${VEX_REFERRER_REPOSITORY:-$image_repository}"
+  local scout_org="${DOCKER_SCOUT_ORG:-sage}"
 
   if [[ "$ecr_registry" == *.dkr.ecr.*.amazonaws.com ]] && command -v aws >/dev/null 2>&1; then
     echo "--- :aws: Re-authenticating Docker for $ecr_registry"
@@ -334,8 +336,10 @@ attach_vex_attestation() {
   DOCKER_CONFIG="$docker_config_dir" "$docker_bin" scout attestation add \
     --file "$vex_file" \
     --predicate-type "https://openvex.dev/ns/v0.2.0" \
-    --org "sage" \
-    --referrer "$image_ref"
+    --org "$scout_org" \
+    --referrer \
+    --referrer-repository "$referrer_repository" \
+    "$image_ref"
 
   rm -f "$vex_file"
 }
