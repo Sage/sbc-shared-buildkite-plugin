@@ -72,6 +72,16 @@ Environment variables to customize behavior:
     - ssh://git@github.com/Sage/sbc-shared-buildkite-plugin.git#2.9.0:
         action: coverage_metrics
 ```
+
+## Push Image Naming
+
+`push_image` locates source images in the Buildkite ECR using the `image_naming` option:
+
+| Value | x86_64 source | arm64 source (`multiarch_image_push: true`) |
+|-------|---------------|---------------------------------------------|
+| `build` (default) | `<app>-<tag>-build-<N>` | `<app>-<tag>-arm64-build-<N>` |
+| `platform` | `<app>-<tag>-x86_64-<N>` | `<app>-<tag>-aarch64-<N>` |
+
 ## Testing
 
 To run the test suite:

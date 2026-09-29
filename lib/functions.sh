@@ -155,10 +155,13 @@ pushx () {
 # app: Application name e.g. 'sage_one_advanced'. Used to find the source image in the Buildkite ECR.
 # tag: Image variant e.g 'application', 'test' or 'database'.
 # multiarch: Whether to push a manifest with images for both amd64 and arm64 architectures.
+# image_naming: (Optional) 'build' (default) finds <app>-<tag>[-arm64]-build-<N>; 'platform' finds <app>-<tag>-<x86_64|aarch64>-<N>.
 # BUILDKITE_BUILD_NUMBER: Used to find the source image in the Buildkite ECR.
 # S1_REGION: AWS region of the target ECR.
 # BK_BRANCH: The git branch or tag being built, used to determine the target docker image tag in the target ECR, unless that is overridden by TARGET_TAG.
 push_image () {
+  local image_naming=build
+
   switches "$@"
   validate_switches account_id app tag multiarch
   varx BUILDKITE_BUILD_NUMBER S1_REGION BK_BRANCH
@@ -171,11 +174,15 @@ push_image () {
 
   TARGET_ECR=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:$target_tag
 
-  SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
+  if [[ "$image_naming" == "platform" ]]; then
+    SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-x86_64-$BUILDKITE_BUILD_NUMBER
+    SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-aarch64-$BUILDKITE_BUILD_NUMBER
+  else
+    SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
+    SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
+  fi
 
   if [[ "$multiarch" == "true" ]]; then
-    SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
-
     echo "Creating multi-arch manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64 and $SOURCE_IMAGE_ARM64"
 
     docker buildx imagetools create --tag $TARGET_ECR $SOURCE_IMAGE_X86_64 $SOURCE_IMAGE_ARM64
