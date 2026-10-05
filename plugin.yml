@@ -25,11 +25,6 @@ configuration:
       type: boolean
     extra_suffix:
       type: string
-    image_naming:
-      type: string
-      enum:
-        - build
-        - platform
     coverage:
       type: number
     coverage_tolerance:

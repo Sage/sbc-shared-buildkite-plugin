@@ -11,11 +11,11 @@ if [[ $ACTION == "push_image" ]]; then
   INITIAL_BK_BRANCH="$BK_BRANCH"
 
   # Push the docker image
-  push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG --multiarch $MULTIARCH_IMAGE_PUSH --image_naming $IMAGE_NAMING
+  push_image --account_id $ACCOUNT_ID --app $APP --tag $DOCKER_TAG --multiarch $MULTIARCH_IMAGE_PUSH
 
   if [ -n "${BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX:-}" ]; then
     BK_BRANCH="$INITIAL_BK_BRANCH-$BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX"
-    push_image --account_id $ACCOUNT_ID --app $APP --tag "${DOCKER_TAG}-${BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX}" --multiarch $MULTIARCH_IMAGE_PUSH --image_naming $IMAGE_NAMING
+    push_image --account_id $ACCOUNT_ID --app $APP --tag "${DOCKER_TAG}-${BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX}" --multiarch $MULTIARCH_IMAGE_PUSH
   fi
 
   # For dev, other images like database and test and master should be pushed.
@@ -26,13 +26,13 @@ if [[ $ACTION == "push_image" ]]; then
       if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
         echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image"
         BK_BRANCH="test-$INITIAL_BK_BRANCH"
-        push_image --account_id $ACCOUNT_ID --app $APP --tag test --multiarch $MULTIARCH_IMAGE_PUSH --image_naming $IMAGE_NAMING
+        push_image --account_id $ACCOUNT_ID --app $APP --tag test --multiarch $MULTIARCH_IMAGE_PUSH
       fi
 
       if [[ "$HAS_DB_IMAGE" == "true" ]]; then
         echo "DB image"
         BK_BRANCH="database-$INITIAL_BK_BRANCH"
-        push_image --account_id $ACCOUNT_ID --app $APP --tag database --multiarch $MULTIARCH_IMAGE_PUSH --image_naming $IMAGE_NAMING
+        push_image --account_id $ACCOUNT_ID --app $APP --tag database --multiarch $MULTIARCH_IMAGE_PUSH
       fi
     fi
   fi
