@@ -171,11 +171,11 @@ push_image () {
 
   TARGET_ECR=$account_id.dkr.ecr.$S1_REGION.amazonaws.com/$REPO:$target_tag
 
-  SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-build-$BUILDKITE_BUILD_NUMBER
+  SOURCE_IMAGE_X86_64=$BK_ECR:$app-$tag-x86_64-$BUILDKITE_BUILD_NUMBER
+  SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-aarch64-$BUILDKITE_BUILD_NUMBER
+
 
   if [[ "$multiarch" == "true" ]]; then
-    SOURCE_IMAGE_ARM64=$BK_ECR:$app-$tag-arm64-build-$BUILDKITE_BUILD_NUMBER
-
     echo "Creating multi-arch manifest: $TARGET_ECR with $SOURCE_IMAGE_X86_64 and $SOURCE_IMAGE_ARM64"
 
     docker buildx imagetools create --tag $TARGET_ECR $SOURCE_IMAGE_X86_64 $SOURCE_IMAGE_ARM64

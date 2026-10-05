@@ -72,6 +72,7 @@ Environment variables to customize behavior:
     - ssh://git@github.com/Sage/sbc-shared-buildkite-plugin.git#2.9.0:
         action: coverage_metrics
 ```
+
 ## Testing
 
 To run the test suite:

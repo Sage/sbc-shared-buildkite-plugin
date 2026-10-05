@@ -61,13 +61,13 @@ set_up_push_image_env_vars() {
 @test "push_image action pulls, tags, and pushes the docker image" {
   set_up_push_image_env_vars
 
-  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing manifest"
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-x86_64-123 : echo pushing manifest"
 
   run -0 "$PLUGIN_ROOT/hooks/post-command"
 
   [[ "${lines[0]}" == *"--- :floppy_disk: Push test image for myapp"* ]]
   [[ "${lines[1]}" == *"Pushing image for myapp using tag: mybranch"* ]]
-  [[ "${lines[2]}" == *"Creating manifest: 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch with 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123"* ]]
+  [[ "${lines[2]}" == *"Creating manifest: 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch with 123.buildkite.ecr.repo/myrepo:myapp-mytag-x86_64-123"* ]]
   [[ "${lines[3]}" == *"pushing manifest"* ]]
 
   unstub docker
@@ -125,13 +125,13 @@ set_up_push_image_env_vars() {
   set_up_push_image_env_vars
   export MULTIARCH_IMAGE_PUSH="true"
 
-  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 123.buildkite.ecr.repo/myrepo:myapp-mytag-arm64-build-123 : echo pushing multi-arch manifest"
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-x86_64-123 123.buildkite.ecr.repo/myrepo:myapp-mytag-aarch64-123 : echo pushing multi-arch manifest"
 
   run -0 "$PLUGIN_ROOT/hooks/post-command"
 
   [[ "${lines[0]}" == *"--- :floppy_disk: Push test image for myapp"* ]]
   [[ "${lines[1]}" == *"Pushing image for myapp using tag: mybranch"* ]]
-  [[ "${lines[2]}" == *"Creating multi-arch manifest: 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch with 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 and 123.buildkite.ecr.repo/myrepo:myapp-mytag-arm64-build-123"* ]]
+  [[ "${lines[2]}" == *"Creating multi-arch manifest: 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch with 123.buildkite.ecr.repo/myrepo:myapp-mytag-x86_64-123 and 123.buildkite.ecr.repo/myrepo:myapp-mytag-aarch64-123"* ]]
   [[ "${lines[3]}" == *"pushing multi-arch manifest"* ]]
 
   unstub docker
@@ -141,8 +141,8 @@ set_up_push_image_env_vars() {
   set_up_push_image_env_vars
   export ENVIRONMENT="qa"
 
-  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-build-123 : echo pushing app manifest"
-  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch 123.buildkite.ecr.repo/myrepo:myapp-database-build-123 : echo pushing db manifest"
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:mybranch 123.buildkite.ecr.repo/myrepo:myapp-mytag-x86_64-123 : echo pushing app manifest"
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:database-mybranch 123.buildkite.ecr.repo/myrepo:myapp-database-x86_64-123 : echo pushing db manifest"
 
   run -0 "$PLUGIN_ROOT/hooks/post-command"
 
