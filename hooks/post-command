@@ -23,7 +23,7 @@ if [[ $ACTION == "push_image" ]]; then
     # unless we have set TARGET_TAG - as it will push multiple images to the same tag.
     if [[ -z $TARGET_TAG ]]; then
       # Push a special image based on a merge to the default branch (e.g. master or main)
-      if [[ "$BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
+      if [[ "$INITIAL_BK_BRANCH" == "$BUILDKITE_PIPELINE_DEFAULT_BRANCH" ]]; then
         echo "$BUILDKITE_PIPELINE_DEFAULT_BRANCH test image"
         BK_BRANCH="test-$INITIAL_BK_BRANCH"
         push_image --account_id $ACCOUNT_ID --app $APP --tag test --multiarch $MULTIARCH_IMAGE_PUSH

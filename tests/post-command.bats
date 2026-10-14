@@ -152,3 +152,24 @@ set_up_push_image_env_vars() {
 
   unstub docker
 }
+
+@test "push_image on default branch with extra suffix still pushes test image" {
+  set_up_push_image_env_vars
+  export ENVIRONMENT="qa"
+  export BK_BRANCH="$BUILDKITE_PIPELINE_DEFAULT_BRANCH"
+  export BUILDKITE_PLUGIN_SBC_SHARED_EXTRA_SUFFIX="extra"
+  export HAS_DB_IMAGE="false"
+
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:main 123.buildkite.ecr.repo/myrepo:myapp-mytag-x86_64-123 : echo pushing app manifest"
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:main-extra 123.buildkite.ecr.repo/myrepo:myapp-mytag-extra-x86_64-123 : echo pushing suffixed manifest"
+  stub docker "buildx imagetools create --tag 123.dkr.ecr.made-up-region.amazonaws.com/myrepo:test-main 123.buildkite.ecr.repo/myrepo:myapp-test-x86_64-123 : echo pushing test manifest"
+
+  run -0 "$PLUGIN_ROOT/hooks/post-command"
+
+  [[ "$output" == *"pushing app manifest"* ]]
+  [[ "$output" == *"pushing suffixed manifest"* ]]
+  [[ "$output" == *"main test image"* ]]
+  [[ "$output" == *"pushing test manifest"* ]]
+
+  unstub docker
+}
